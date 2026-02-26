@@ -49,7 +49,9 @@ Requirements for initial release. Each maps to roadmap phases.
 ### AI Automation
 
 - [ ] **AI-01**: AI form pre-fill from credential vault data (auto-populate insurance applications, compliance documents, credentialing forms)
-- [ ] **AI-02**: Compliance monitoring AI that flags regulatory changes, approaching deadlines, and shifting requirements
+- [ ] **AI-02**: Automated regulatory monitoring — continuously checks for changes in CA telehealth laws, Medical Board rules, HIPAA updates, and DEA prescribing regulations
+- [ ] **AI-03**: Automated insurance monitoring — tracks payer policy changes, credentialing requirement updates, billing rule changes across all 17 panels
+- [ ] **AI-04**: Automated software/platform monitoring — tracks Tebra updates, API changes, security patches, and vendor compliance status changes
 
 ## v2 Requirements
 
@@ -92,41 +94,43 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| COMP-01 | — | Pending |
-| COMP-02 | — | Pending |
-| COMP-03 | — | Pending |
-| COMP-04 | — | Pending |
-| COMP-05 | — | Pending |
-| COMP-06 | — | Pending |
-| COMP-07 | — | Pending |
-| COMP-08 | — | Pending |
-| COMP-09 | — | Pending |
-| COMP-10 | — | Pending |
-| CRED-01 | — | Pending |
-| CRED-02 | — | Pending |
-| CRED-03 | — | Pending |
-| CRED-04 | — | Pending |
-| OPS-01 | — | Pending |
-| OPS-02 | — | Pending |
-| OPS-03 | — | Pending |
-| OPS-04 | — | Pending |
-| OPS-05 | — | Pending |
-| DASH-01 | — | Pending |
-| DASH-02 | — | Pending |
-| DASH-03 | — | Pending |
-| DASH-04 | — | Pending |
-| DASH-05 | — | Pending |
-| DASH-06 | — | Pending |
-| DASH-07 | — | Pending |
-| DASH-08 | — | Pending |
-| AI-01 | — | Pending |
-| AI-02 | — | Pending |
+| COMP-01 | Phase 1 | Pending |
+| COMP-02 | Phase 1 | Pending |
+| COMP-03 | Phase 1 | Pending |
+| COMP-04 | Phase 1 | Pending |
+| COMP-05 | Phase 1 | Pending |
+| COMP-06 | Phase 1 | Pending |
+| COMP-07 | Phase 1 | Pending |
+| COMP-08 | Phase 1 | Pending |
+| COMP-09 | Phase 1 | Pending |
+| COMP-10 | Phase 1 | Pending |
+| CRED-01 | Phase 2 | Pending |
+| CRED-02 | Phase 2 | Pending |
+| CRED-03 | Phase 2 | Pending |
+| CRED-04 | Phase 2 | Pending |
+| OPS-01 | Phase 3 | Pending |
+| OPS-02 | Phase 3 | Pending |
+| OPS-03 | Phase 3 | Pending |
+| OPS-04 | Phase 3 | Pending |
+| OPS-05 | Phase 3 | Pending |
+| DASH-01 | Phase 4 | Pending |
+| DASH-02 | Phase 4 | Pending |
+| DASH-03 | Phase 4 | Pending |
+| DASH-04 | Phase 4 | Pending |
+| DASH-05 | Phase 4 | Pending |
+| DASH-06 | Phase 4 | Pending |
+| DASH-07 | Phase 4 | Pending |
+| DASH-08 | Phase 4 | Pending |
+| AI-01 | Phase 5 | Pending |
+| AI-02 | Phase 5 | Pending |
+| AI-03 | Phase 5 | Pending |
+| AI-04 | Phase 5 | Pending |
 
 **Coverage:**
-- v1 requirements: 29 total
-- Mapped to phases: 0
-- Unmapped: 29 ⚠️
+- v1 requirements: 31 total
+- Mapped to phases: 29
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-25*
-*Last updated: 2026-02-25 after initial definition*
+*Last updated: 2026-02-25 after roadmap creation*
