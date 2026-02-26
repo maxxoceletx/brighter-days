@@ -78,7 +78,9 @@ Valentina can confidently see her first telehealth patient knowing every complia
 **Corporate Structure Question (Deferred):**
 When ready to hire, options include: (a) rename Valentina Park MD, PC to Brighter Days and hire under it, or (b) create a new Brighter Days S-Corp with Valentina as sole owner. Needs attorney/CPA guidance. Not blocking current launch.
 
-**Tech Vision:** AI-integrated dashboard (TouchDesigner-inspired visual interface) serving as a single command center for compliance monitoring, billing management, form automation, and patient intake workflows.
+**Tech Vision:** TouchDesigner as the central command center — a real-time visual interface that is functional, not just display. Buttons trigger actions (send emails, submit forms, run automations). Connects to Tebra API, Supabase backend, and AI services. Includes running obligations checklist, compliance calendar, automation tracker, and billing oversight. Think mission control for the practice.
+
+**Third-Party Billing:** External billers handle claims submission and coding. Dashboard provides oversight and monitoring of biller activity, not direct billing.
 
 ## Constraints
 
@@ -95,7 +97,7 @@ When ready to hire, options include: (a) rename Valentina Park MD, PC to Brighte
 | Tebra as primary EHR | Already set up and credentialed through it | — Pending (audit needed) |
 | Telehealth-only model | Lower overhead, matches current credentialing | — Pending |
 | Keep Valentina Park MD, PC for now | Entity works for solo practice, defer restructuring | — Pending |
-| AI-integrated dashboard as central ops tool | Consolidate scattered systems into single view | — Pending |
+| TouchDesigner as dashboard platform | Functional command center with real-time visuals, action buttons, automation tracking | — Pending |
 | Maxi as CTO/employee | Handles tech and admin ops | — Pending |
 
 ---
