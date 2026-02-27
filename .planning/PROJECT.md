@@ -78,7 +78,7 @@ Valentina can confidently see her first telehealth patient knowing every complia
 **Corporate Structure Question (Deferred):**
 When ready to hire, options include: (a) rename Valentina Park MD, PC to Brighter Days and hire under it, or (b) create a new Brighter Days S-Corp with Valentina as sole owner. Needs attorney/CPA guidance. Not blocking current launch.
 
-**Tech Vision:** TouchDesigner as the central command center — a real-time visual interface that is functional, not just display. Buttons trigger actions (send emails, submit forms, run automations). Connects to Tebra API, Supabase backend, and AI services. Includes running obligations checklist, compliance calendar, automation tracker, and billing oversight. Think mission control for the practice.
+**Tech Vision:** TouchDesigner as the central command center — a real-time visual interface that is functional, not just display. **ASCII art aesthetic** — the visual language is embedded ASCII art (think retro terminal/hacker aesthetic with styled text-based UI elements rendered inside TouchDesigner's visual pipeline). Buttons trigger actions (send emails, submit forms, run automations). Connects to Tebra API, Supabase backend, and AI services. Includes running obligations checklist, compliance calendar, automation tracker, and billing oversight. Think mission control for the practice, rendered in ASCII.
 
 **Third-Party Billing:** External billers handle claims submission and coding. Dashboard provides oversight and monitoring of biller activity, not direct billing.
 
@@ -98,6 +98,8 @@ When ready to hire, options include: (a) rename Valentina Park MD, PC to Brighte
 | Telehealth-only model | Lower overhead, matches current credentialing | — Pending |
 | Keep Valentina Park MD, PC for now | Entity works for solo practice, defer restructuring | — Pending |
 | TouchDesigner as dashboard platform | Functional command center with real-time visuals, action buttons, automation tracking | — Pending |
+| ASCII art visual aesthetic | Modern, dynamic ASCII art in TouchDesigner — styled, animated, flowing text-based UI (not basic retro) | — Confirmed |
+| Dedicated Supabase project | Brighter Days gets its own Supabase project — NOT shared with FindItNOW or Momo | — Confirmed |
 | Maxi as CTO/employee | Handles tech and admin ops | — Pending |
 
 ---
