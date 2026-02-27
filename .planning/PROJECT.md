@@ -101,6 +101,7 @@ When ready to hire, options include: (a) rename Valentina Park MD, PC to Brighte
 | ASCII art visual aesthetic | Modern, dynamic ASCII art in TouchDesigner — styled, animated, flowing text-based UI (not basic retro) | — Confirmed |
 | Dedicated Supabase project | Brighter Days gets its own Supabase project — NOT shared with FindItNOW or Momo | — Confirmed |
 | Maxi as CTO/employee | Handles tech and admin ops | — Pending |
+| n8n as automation backbone | Self-hosted workflow automation bridging Tebra, Supabase, email, and TouchDesigner — separates automation logic from visualization | — Under evaluation (Phase 4/5) |
 
 ---
-*Last updated: 2026-02-25 after initialization*
+*Last updated: 2026-02-27 after Phase 1 completion*
