@@ -11,8 +11,8 @@ See: .planning/PROJECT.md (updated 2026-02-25)
 
 Phase: 1 of 5 (Compliance Audit & Verification)
 Plan: 0 of 3 in current phase
-Status: Ready to plan
-Last activity: 2026-02-25 -- Roadmap created
+Status: Planned (3 plans in 1 wave, verified, ready to execute)
+Last activity: 2026-02-27 -- Phase 1 planned with real document audit data
 
 Progress: [..........] 0%
 
@@ -57,9 +57,12 @@ None yet.
 - Tebra API access has LOW confidence from research -- actual capabilities need validation during Phase 4 spec work
 - DEA telehealth flexibility expires Dec 31, 2026 -- compliance calendar must track this
 - CAQH current attestation status unknown -- Phase 1 must verify actual standing
+- **CRITICAL: Medicare DEACTIVATED 1/31/2026** -- must re-enroll via PECOS
+- **CRITICAL: Business license expired 12/31/2025** -- City of Torrance renewal needed
+- **CRITICAL: No B&P 2290.5 telehealth consent exists** -- Plan 01-03 will create it
 
 ## Session Continuity
 
 Last session: 2026-02-27
-Stopped at: Phase 1 context gathered, ready to plan
-Resume file: .planning/phases/01-compliance-audit-verification/01-CONTEXT.md
+Stopped at: Phase 1 planned, ready to execute
+Resume file: .planning/phases/01-compliance-audit-verification/01-01-PLAN.md
