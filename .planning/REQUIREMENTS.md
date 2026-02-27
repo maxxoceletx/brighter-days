@@ -9,13 +9,13 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Compliance
 
-- [ ] **COMP-01**: HIPAA Security Risk Analysis formally documented (OCR's #1 enforcement target, $25K-$3M penalties)
-- [ ] **COMP-02**: BAAs signed and tracked with all vendors handling PHI (Tebra, Supabase, email provider, etc.)
-- [ ] **COMP-03**: CA telehealth informed consent form audited or created per B&P Code 2290.5 (required before first session)
+- [x] **COMP-01**: HIPAA Security Risk Analysis formally documented (OCR's #1 enforcement target, $25K-$3M penalties)
+- [x] **COMP-02**: BAAs signed and tracked with all vendors handling PHI (Tebra, Supabase, email provider, etc.)
+- [x] **COMP-03**: CA telehealth informed consent form audited or created per B&P Code 2290.5 (required before first session)
 - [ ] **COMP-04**: License and certification expiry tracking with automated alerts (medical license, DEA, malpractice insurance, board certifications)
-- [ ] **COMP-05**: Good Faith Estimate template compliant with No Surprises Act (requires CPT codes, NPI, tax ID, projected sessions for self-pay patients)
-- [ ] **COMP-06**: Patient location verification protocol documented (patient physical location governs licensure — CA only, no interstate)
-- [ ] **COMP-07**: Audit all existing patient-facing forms (consent, intake, financial agreements) against current CA law and federal requirements for completeness and liability protection
+- [x] **COMP-05**: Good Faith Estimate template compliant with No Surprises Act (requires CPT codes, NPI, tax ID, projected sessions for self-pay patients)
+- [x] **COMP-06**: Patient location verification protocol documented (patient physical location governs licensure — CA only, no interstate)
+- [x] **COMP-07**: Audit all existing patient-facing forms (consent, intake, financial agreements) against current CA law and federal requirements for completeness and liability protection
 - [ ] **COMP-08**: Full CA telehealth psychiatry compliance checklist — verify every legal obligation for operating this type of practice (state licensing, board requirements, corporate compliance, tax obligations, insurance requirements, OSHA, employment law for CTO hire, etc.)
 - [ ] **COMP-09**: Malpractice insurance verification — confirm coverage includes telehealth psychiatry and controlled substance prescribing
 - [ ] **COMP-10**: DEA registration audit — verify registration is active, correct address, covers Schedule II-V, and compliant with Ryan Haight Act telehealth flexibilities
@@ -94,13 +94,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| COMP-01 | Phase 1 | Pending |
-| COMP-02 | Phase 1 | Pending |
-| COMP-03 | Phase 1 | Pending |
+| COMP-01 | Phase 1 | Complete (01-01) |
+| COMP-02 | Phase 1 | Complete (01-02) |
+| COMP-03 | Phase 1 | Complete (01-03) |
 | COMP-04 | Phase 1 | Pending |
-| COMP-05 | Phase 1 | Pending |
-| COMP-06 | Phase 1 | Pending |
-| COMP-07 | Phase 1 | Pending |
+| COMP-05 | Phase 1 | Complete (01-03) |
+| COMP-06 | Phase 1 | Complete (01-03) |
+| COMP-07 | Phase 1 | Complete (01-03) |
 | COMP-08 | Phase 1 | Pending |
 | COMP-09 | Phase 1 | Pending |
 | COMP-10 | Phase 1 | Pending |
