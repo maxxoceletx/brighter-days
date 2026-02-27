@@ -30,12 +30,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. A CA-compliant telehealth informed consent form exists that meets B&P Code 2290.5 requirements, ready to load into Tebra
   4. A master compliance checklist covers every legal obligation (state licensing, DEA, CAQH, malpractice, corporate compliance, tax, OSHA, employment law) with verified status for each item
   5. DEA registration is confirmed active with correct address, schedule coverage, and Ryan Haight Act compliance documented
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 01-01: TBD
-- [ ] 01-02: TBD
-- [ ] 01-03: TBD
+- [ ] 01-01-PLAN.md -- Compliance data foundation: Supabase schema, seed all compliance items from document audit, generate prioritized action items report
+- [ ] 01-02-PLAN.md -- HIPAA SRA formal document (HHS SRA Tool format) and BAA vendor audit with tracker
+- [ ] 01-03-PLAN.md -- Patient-facing documents: telehealth consent (B&P 2290.5), minor consent, GFE template, location protocol, forms audit
 
 ### Phase 2: Credential Vault & Monitoring
 **Goal**: Every practice credential, login, license, and certificate is organized in one place with automated alerts before anything expires
@@ -73,7 +73,7 @@ Plans:
 **Depends on**: Phase 1 (compliance items define what dashboard tracks), Phase 2 (credential data model informs dashboard data sources), Phase 3 (SOPs define what workflows dashboard supports)
 **Requirements**: DASH-01, DASH-02, DASH-03, DASH-04, DASH-05, DASH-06, DASH-07, DASH-08
 **Success Criteria** (what must be TRUE):
-  1. The spec defines the TouchDesigner command center layout with all panels, data sources, and interaction patterns documented
+  1. The spec defines the TouchDesigner command center layout with ASCII art visual aesthetic — all panels, data sources, and interaction patterns documented with the retro terminal/text-based UI design language
   2. The spec includes a compliance status panel design showing green/yellow/red indicators for every tracked license, cert, BAA, and CAQH status
   3. The spec covers the obligations checklist, compliance calendar, and billing oversight views with data flow from Tebra API
   4. The spec documents Tebra API integration requirements (endpoints, polling frequency, data mapping) including research findings on API capabilities and costs
@@ -112,7 +112,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Compliance Audit & Verification | 0/3 | Not started | - |
+| 1. Compliance Audit & Verification | 0/3 | Planning complete | - |
 | 2. Credential Vault & Monitoring | 0/2 | Not started | - |
 | 3. Clinical & Business Operations | 0/2 | Not started | - |
 | 4. Dashboard Command Center Specification | 0/3 | Not started | - |
