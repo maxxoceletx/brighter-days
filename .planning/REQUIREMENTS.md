@@ -22,8 +22,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Credentials
 
-- [ ] **CRED-01**: 1Password vault organized with all practice logins (Tebra, CAQH, DEA, payer portals, state boards, email, etc.)
-- [ ] **CRED-02**: Single credential inventory document listing every license, cert, NPI (1023579513), DEA#, payer IDs, and expiry dates
+- [x] **CRED-01**: 1Password vault organized with all practice logins (Tebra, CAQH, DEA, payer portals, state boards, email, etc.)
+- [x] **CRED-02**: Single credential inventory document listing every license, cert, NPI (1023579513), DEA#, payer IDs, and expiry dates
 - [ ] **CRED-03**: CAQH 120-day re-attestation alert system (missing one cycle can suspend all 17 payer contracts simultaneously)
 - [ ] **CRED-04**: Payer credentialing status tracker for all 17 insurance panels with contract dates and contact info
 
@@ -104,8 +104,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | COMP-08 | Phase 1 | Complete (01-01) |
 | COMP-09 | Phase 1 | Complete (01-01) |
 | COMP-10 | Phase 1 | Complete (01-01) |
-| CRED-01 | Phase 2 | Pending |
-| CRED-02 | Phase 2 | Pending |
+| CRED-01 | Phase 2 | Complete (02-01) |
+| CRED-02 | Phase 2 | Complete (02-01) |
 | CRED-03 | Phase 2 | Pending |
 | CRED-04 | Phase 2 | Pending |
 | OPS-01 | Phase 3 | Pending |
@@ -133,4 +133,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-02-25*
-*Last updated: 2026-02-27 after 01-01 plan completion (COMP-04, COMP-08, COMP-09, COMP-10 marked complete)*
+*Last updated: 2026-02-27 after 02-01 plan completion (CRED-01, CRED-02 marked complete — 1Password vault spec + credential schema/seed delivered)*

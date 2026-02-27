@@ -49,7 +49,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 02-01-PLAN.md -- Credential data foundation: Supabase schema extension (credentials + payer_tracker tables), credential seed data, 1Password vault structure spec
+- [x] 02-01-PLAN.md -- Credential data foundation: Supabase schema extension (credentials + payer_tracker tables), credential seed data, 1Password vault structure spec
 - [ ] 02-02-PLAN.md -- Payer tracker dossiers (all 17 panels), printable credential inventory, alert architecture spec for Phase 4/5
 
 ### Phase 3: Clinical & Business Operations
@@ -113,7 +113,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Compliance Audit & Verification | 3/3 | Complete | 2026-02-27 |
-| 2. Credential Vault & Monitoring | 0/2 | Not started | - |
+| 2. Credential Vault & Monitoring | 1/2 | In progress | - |
 | 3. Clinical & Business Operations | 0/2 | Not started | - |
 | 4. Dashboard Command Center Specification | 0/3 | Not started | - |
 | 5. AI Automation Specification | 0/1 | Not started | - |
