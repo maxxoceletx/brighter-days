@@ -60,6 +60,9 @@ Recent decisions affecting current work:
 - Third-party billers handle claims; dashboard provides oversight only
 - TouchDesigner is the dashboard platform (desktop app, not web)
 - Tebra is the existing EHR -- complement, don't replace
+- Consumer Gmail (valentinaparkmd@gmail.com) has no BAA path — PHI transmission via consumer Gmail is HIPAA violation; Google Workspace is only resolution
+- Google Voice (424) 248-8090 BAA depends on account type — Workspace Voice is covered by Workspace BAA; consumer Voice requires migration
+- SRA risk level: LOW-MEDIUM; strong technical controls offset by BAA verification gaps; drops to LOW once email/Voice BAA confirmed
 - Telehealth consent uses 12-element structure matching B&P 2290.5, patient-friendly language
 - Minor consent splits into Part A (parent) + Part B (minor assent) with age-appropriate language
 - GFE uses Medicare fee schedule rates as baseline, 6-month projection tables by treatment intensity
@@ -82,6 +85,8 @@ Recent decisions affecting current work:
 - **CRITICAL: Medicare DEACTIVATED 1/31/2026** -- must re-enroll via PECOS (Phase 2 scope)
 - **CRITICAL: Business license expired 12/31/2025** -- City of Torrance renewal needed (action item from 01-01)
 - Controlled substance agreement gap -- needed before first Schedule II Rx; create in Phase 3 OPS
+- **CRITICAL: Consumer Gmail BAA gap** -- valentinaparkmd@gmail.com cannot support HIPAA BAA; must migrate patient comms to Google Workspace and enable BAA in Admin Console (target 2026-03-15)
+- **CRITICAL: Google Voice BAA pending** -- (424) 248-8090 BAA availability depends on Workspace vs. consumer account type; verify and resolve by 2026-03-15
 
 ## Session Continuity
 
