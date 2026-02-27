@@ -46,11 +46,11 @@ Plans:
   2. A single credential inventory document lists every license, certification, NPI, DEA number, and payer ID with expiry dates
   3. CAQH 120-day re-attestation alerts are configured and will fire at 90/60/30/7 days before deadline
   4. A payer credentialing tracker for all 17 insurance panels shows contract dates, re-credentialing deadlines, and contact info
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 02-01: TBD
-- [ ] 02-02: TBD
+- [ ] 02-01-PLAN.md -- Credential data foundation: Supabase schema extension (credentials + payer_tracker tables), credential seed data, 1Password vault structure spec
+- [ ] 02-02-PLAN.md -- Payer tracker dossiers (all 17 panels), printable credential inventory, alert architecture spec for Phase 4/5
 
 ### Phase 3: Clinical & Business Operations
 **Goal**: Every operational workflow -- from patient intake to crisis response to biller oversight -- is documented in SOPs that Valentina and Maxi can follow on day one
