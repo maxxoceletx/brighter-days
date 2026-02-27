@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in_progress
-last_updated: "2026-02-27T12:42:34Z"
+last_updated: "2026-02-27T12:54:00Z"
 progress:
   total_phases: 5
   completed_phases: 1
-  total_plans: 4
-  completed_plans: 4
+  total_plans: 5
+  completed_plans: 5
 ---
 
 # Project State
@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-02-25)
 ## Current Position
 
 Phase: 2 of 5 (Credential Vault & Monitoring) — IN PROGRESS
-Plan: 1 of 3 complete in Phase 2 (4 of ~15 total plans)
-Status: Phase 1 complete; Phase 2 Plan 1 complete — schema + seed + vault spec delivered
-Last activity: 2026-02-27 -- Phase 2 Plan 01 executed (credential schema, seed, 1Password spec)
+Plan: 2 of 3 complete in Phase 2 (5 of ~15 total plans)
+Status: Phase 1 complete; Phase 2 Plans 1-2 complete — schema, seed, vault spec, payer dossiers, credential inventory, and alert architecture spec delivered
+Last activity: 2026-02-27 -- Phase 2 Plan 02 executed (payer tracker seed, credential inventory, alert architecture)
 
-Progress: [########--] ~27% (Phase 1 complete + Phase 2 Plan 1 complete)
+Progress: [##########-] ~33% (Phase 1 complete + Phase 2 Plans 1-2 complete)
 
 ## Performance Metrics
 
@@ -41,11 +41,11 @@ Progress: [########--] ~27% (Phase 1 complete + Phase 2 Plan 1 complete)
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-compliance-audit-verification | 3 | ~18 min | ~6 min |
-| 02-credential-vault-monitoring | 1 (so far) | 6 min | 6 min |
+| 02-credential-vault-monitoring | 2 (so far) | 11 min | ~5.5 min |
 
 **Recent Trend:**
-- Last 4 plans: 01-01, 01-02, 01-03, 02-01
-- Trend: Consistent (~6 min/plan)
+- Last 5 plans: 01-01, 01-02, 01-03, 02-01, 02-02
+- Trend: Consistent (~5-6 min/plan)
 
 *Updated after each plan completion*
 
@@ -73,6 +73,11 @@ Recent decisions affecting current work:
 - CAQH expiry_date requires Valentina to verify last attestation date in CAQH portal (expiry = last_attestation + 120 days)
 - credentials table FK-extends Phase 1 compliance_items — no data duplication, enrichment via foreign key
 - 1Password vault uses 7 functional categories grouped by use pattern (not alphabetical)
+- 9 of 17 payers have UNKNOWN contract status — populated with industry-norm estimates (recred_cycle_years=3, timely_filing_days=90) flagged as ESTIMATED per plan requirement
+- CAQH is highest-risk single credential — one missed 120-day re-attestation cycle silently suspends all 17 payer contracts simultaneously
+- Alert architecture is spec-only in Phase 2 — n8n workflows and Google Calendar integration built in Phase 4/5
+- Payer re-credentialing alert window is 180 days (vs 90 for credentials) because re-cred requires 90-day advance submission to payers
+- NULL CAQH expiry_date is a pre-launch blocker for Phase 5 — Valentina must verify last attestation date in CAQH portal before alerts can be enabled
 
 ### Pending Todos
 
@@ -98,5 +103,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-27
-Stopped at: Completed 02-01-PLAN.md (Phase 2 Plan 1 — credential schema + seed + vault spec)
-Resume file: .planning/phases/02-credential-vault-monitoring/02-02-PLAN.md
+Stopped at: Completed 02-02-PLAN.md (Phase 2 Plan 2 — payer tracker seed, credential inventory, alert architecture)
+Resume file: .planning/phases/02-credential-vault-monitoring/02-03-PLAN.md (if exists, otherwise Phase 3)
