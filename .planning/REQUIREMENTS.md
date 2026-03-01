@@ -37,8 +37,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Dashboard (TouchDesigner Command Center)
 
-- [ ] **DASH-01**: TouchDesigner-based practice command center — central node for all practice operations, real-time visual interface
-- [ ] **DASH-02**: Compliance status panel with visual indicators (green/yellow/red) for all licenses, certs, BAAs, and CAQH status
+- [x] **DASH-01**: TouchDesigner-based practice command center — central node for all practice operations, real-time visual interface
+- [x] **DASH-02**: Compliance status panel with visual indicators (green/yellow/red) for all licenses, certs, BAAs, and CAQH status
 - [ ] **DASH-03**: Running obligations checklist — interactive list of everything you need to do, with status and priority
 - [ ] **DASH-04**: Compliance and operations calendar — deadlines, renewals, CAQH attestation windows, filing dates, all in one view
 - [ ] **DASH-05**: Tebra API integration pulling appointment and billing data into dashboard (research cost, capabilities, and MCP availability)
@@ -113,8 +113,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | OPS-03 | Phase 3 | Complete |
 | OPS-04 | Phase 3 | Complete |
 | OPS-05 | Phase 3 | Complete |
-| DASH-01 | Phase 4 | Pending |
-| DASH-02 | Phase 4 | Pending |
+| DASH-01 | Phase 4 | Complete (04-01) |
+| DASH-02 | Phase 4 | Complete (04-01) |
 | DASH-03 | Phase 4 | Pending |
 | DASH-04 | Phase 4 | Pending |
 | DASH-05 | Phase 4 | Pending |
@@ -133,4 +133,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-02-25*
-*Last updated: 2026-02-27 after 02-02 plan completion (CRED-03, CRED-04 marked complete — payer tracker seed, credential inventory, alert architecture spec delivered)*
+*Last updated: 2026-03-01 after 04-01 plan completion (DASH-01, DASH-02 marked complete — dashboard architecture spec, Today panel, and Compliance Status panel delivered)*

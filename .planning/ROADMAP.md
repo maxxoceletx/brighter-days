@@ -85,7 +85,7 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 04-01-PLAN.md -- Architecture foundation: TD network hierarchy, Supabase schema, ASCII aesthetic rules, Today panel (DASH-01), Compliance Status panel (DASH-02)
+- [x] 04-01-PLAN.md -- Architecture foundation: TD network hierarchy, Supabase schema, ASCII aesthetic rules, Today panel (DASH-01), Compliance Status panel (DASH-02)
 - [ ] 04-02-PLAN.md -- Data display panels: Obligations Checklist (DASH-03), Compliance Calendar (DASH-04), Tebra Integration (DASH-05), Billing Oversight (DASH-06)
 - [ ] 04-03-PLAN.md -- Action panels: Action Buttons (DASH-07), Automation Tracker (DASH-08), Developer Guide and Pre-Launch Checklist
 
@@ -116,5 +116,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | 1. Compliance Audit & Verification | 3/3 | Complete | 2026-02-27 |
 | 2. Credential Vault & Monitoring | 2/2 | Complete | 2026-02-27 |
 | 3. Clinical & Business Operations | 3/3 | Complete   | 2026-03-01 |
-| 4. Dashboard Command Center Specification | 0/3 | Planned | - |
+| 4. Dashboard Command Center Specification | 1/3 | In Progress | 2026-03-01 (plan 01) |
 | 5. AI Automation Specification | 0/1 | Not started | - |

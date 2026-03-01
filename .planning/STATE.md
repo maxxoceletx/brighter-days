@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-01T09:45:22.141Z"
+last_updated: "2026-03-01T10:36:00Z"
 progress:
   total_phases: 4
   completed_phases: 3
-  total_plans: 8
-  completed_plans: 8
+  total_plans: 11
+  completed_plans: 9
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-25)
 
 **Core value:** Valentina can confidently see her first telehealth patient knowing every compliance, billing, and operational requirement is met -- and has a single system to manage it all going forward.
-**Current focus:** Phase 3 COMPLETE — Ready for Phase 4 (Dashboard Spec)
+**Current focus:** Phase 4 IN PROGRESS — Dashboard Command Center Specification (Plan 01 of 3 complete)
 
 ## Current Position
 
-Phase: 3 of 3 (Clinical & Business Operations) — COMPLETE
-Plan: 3 of 3 complete in Phase 3 (8 of 8 total plans across all phases)
-Status: All three phases complete — Phase 1 compliance audit, Phase 2 credential vault, Phase 3 operations SOPs (OPS-01 through OPS-05) all delivered
-Last activity: 2026-03-01 -- Phase 3 Plan 03 executed (SOP-04 business structure + SOP-05 biller onboarding)
+Phase: 4 of 4 (Dashboard Spec) — IN PROGRESS
+Plan: 1 of 3 complete in Phase 4 (9 of 11 total plans across all phases)
+Status: Phase 4 Plan 01 complete — master spec document with Sections 1-5 (architecture, TD hierarchy, ASCII aesthetic, Today panel DASH-01, Compliance panel DASH-02)
+Last activity: 2026-03-01 -- Phase 4 Plan 01 executed (dashboard architecture + panels 1-2 spec)
 
-Progress: [############] 100% (All 8 plans across 3 phases complete)
+Progress: [###########-] 82% (9 of 11 plans complete)
 
 ## Performance Metrics
 
@@ -89,6 +89,11 @@ Recent decisions affecting current work:
 - [Phase 03]: CURES previous business day interpretation: Friday check satisfies Monday prescribing requirement
 - [Phase 03]: CA H&S Code 11162.1 requires EPCS (electronic prescribing for controlled substances) for Schedule II as of 2025-01-01
 - [Phase 03]: CA W&I Code 5850.1 allows 12+ minors to consent to outpatient mental health services independently if sufficiently mature
+- [Phase 04-01]: TD is pure display layer — reads only from Supabase, never calls Tebra/CAQH/external APIs directly
+- [Phase 04-01]: CAQH NULL expiry_date shows [???] AMBER indicator, never defaults to green — explicit unknown state
+- [Phase 04-01]: Estimated payer re-cred dates (9 of 17) must show ~ prefix to distinguish from confirmed dates
+- [Phase 04-01]: Overdue banner cannot be dismissed — persists until all EXPIRED credentials resolved in Supabase
+- [Phase 04-01]: Per-row Text TOP composition (separate Text TOP per credential row) for compliance panel color coding
 
 ### Pending Todos
 
@@ -114,5 +119,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 03-03-PLAN.md (Phase 3 Plan 3 — SOP-04 business structure + SOP-05 biller onboarding) — ALL PHASES COMPLETE
-Resume file: Phase 4 planning (Dashboard Spec) — begin with /gsd:plan-phase or /gsd:progress
+Stopped at: Completed 04-01-PLAN.md (Phase 4 Plan 1 — dashboard architecture + compliance panels DASH-01, DASH-02)
+Resume file: 04-02-PLAN.md (Phase 4 Plan 2 — panels 3-6: credentials, calendar, appointments, billing)
