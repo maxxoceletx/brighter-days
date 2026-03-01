@@ -1984,3 +1984,1047 @@ The `tebra_appointments` and `tebra_billing_summary` tables are defined with com
 | `synced_at` | timestamptz | When this row was written/updated |
 
 Full DDL (CREATE TABLE statements) for both tables is in Section 9 (Plan 03).
+
+---
+
+## Section 9: Panel 7 — Action Buttons (DASH-07)
+
+### 9.1 Purpose
+
+This panel is what makes the dashboard a command center rather than just a display. The four action buttons trigger real automations — checking CAQH status, generating compliance reports, polling payer portals, and sending patient communications. Every button press initiates a real-world action with a traceable audit trail in `automation_log`.
+
+**Container COMP:** `panel_actions` — positioned bottom-left spanning two columns (see Section 2.3 layout coordinates). Dimensions: 1707 × 500 px at 2560×1440 (2559 × 750 at 3840×2160).
+
+---
+
+### 9.2 Operators Inside panel_actions
+
+| Operator | Type | Purpose |
+|----------|------|---------|
+| `text_header_actions` | Text TOP | Panel title: "COMMAND CENTER" |
+| `button_caqh_check` | Button COMP | Trigger CAQH Re-Attestation Check automation |
+| `button_compliance_report` | Button COMP | Trigger Compliance Report generation |
+| `button_payer_status` | Button COMP | Trigger Payer Status Check across portals |
+| `button_send_comms` | Button COMP | Open confirmation dialog for Send Communication |
+| `text_badge_caqh` | Text TOP | Inline status badge for CAQH CHECK button |
+| `text_badge_report` | Text TOP | Inline status badge for COMPLIANCE REPORT button |
+| `text_badge_payer` | Text TOP | Inline status badge for PAYER STATUS button |
+| `text_badge_comms` | Text TOP | Inline status badge for SEND COMMS button |
+| `container_confirm_dialog` | Container COMP | Confirmation overlay (hidden by default, shown for CONFIRM REQUIRED actions) |
+| `webClient_action_post` | Web Client DAT | POSTs webhook payloads to n8n when buttons clicked |
+| `webClient_action_poll` | Web Client DAT | Quick-polls `automation_log` 5 seconds after any button press |
+| `execute_action_state` | DAT Execute | Watches `webClient_action_poll` response, updates badge states |
+| `timer_post_action_poll` | Timer CHOP | Mode=Once, Length=5 — fires 5 seconds after any button press to trigger quick poll |
+| `timer_badge_reset_failed` | Timer CHOP | Mode=Once, Length=30 — resets FAILED badges back to IDLE after 30 seconds |
+| `pattern_idle_breath` | Pattern CHOP | Sine wave 0.2 Hz — idle border animation |
+| `pattern_alert_pulse` | Pattern CHOP | Square wave 1 Hz — alert border animation |
+| `execute_state_actions` | DAT Execute | Manages panel animation state |
+
+---
+
+### 9.3 Button Flow: From Click to Result
+
+Every button press follows this flow:
+
+```
+1. User clicks Button COMP in panel_actions
+2. Panel Execute DAT onOffToOn callback fires
+3. Python builds JSON payload dict
+4. Python sets webClient_action_post URL to n8n webhook URL
+5. Python sets webClient_action_post Method = POST, Body = JSON payload
+6. Python calls webClient_action_post.par.request.pulse()
+7. Button's inline badge transitions: IDLE → RUNNING
+8. timer_post_action_poll starts (5 second countdown)
+9. n8n receives POST, executes workflow, writes result to automation_log
+10. timer_post_action_poll fires → webClient_action_poll pulse (quick-poll automation_log)
+11. execute_action_state reads latest automation_log row for this action_type
+12. If status='completed': badge transitions RUNNING → DONE
+13. If status='failed': badge transitions RUNNING → FAILED (holds 30s, then IDLE)
+```
+
+**Web Client DAT POST configuration (webClient_action_post):**
+```
+Method: POST
+URL: {set dynamically per button — n8n webhook URL}
+Body: {JSON string — set dynamically per button}
+Headers (via table_header_credentials):
+  apikey: {service_role_key}
+  Authorization: Bearer {service_role_key}
+  Content-Type: application/json
+```
+
+**Quick-poll URL (webClient_action_poll):**
+```
+Method: GET
+URL: https://{project-ref}.supabase.co/rest/v1/automation_log
+  ?action_type=eq.{last_action_type}
+  &order=triggered_at.desc
+  &limit=1
+```
+
+---
+
+### 9.4 Button 1: CAQH Re-Attestation Check
+
+**Label:** `[ CAQH CHECK ]`
+**Confirmation tier:** IMMEDIATE (read-only check — does not modify any state, only reads CAQH portal and writes the result)
+**n8n webhook URL:** `https://{n8n_host}/webhook/caqh-recheck`
+
+**JSON payload:**
+```json
+{
+  "action": "caqh_recheck",
+  "triggered_by": "dashboard_button",
+  "triggered_at": "{ISO timestamp}"
+}
+```
+
+**n8n workflow actions:**
+1. Authenticate to CAQH ProView (proview.caqh.org) using stored credentials
+2. Scrape or query attestation status — check days until next attestation deadline
+3. Write result to `automation_log` (status: `completed` or `failed`, details: attestation date or error)
+4. If new attestation date found: PATCH `credentials` table CAQH row `expiry_date = {found_date + 120 days}`
+5. Write completion timestamp to `automation_log.completed_at`
+
+**Python (Panel Execute DAT — button_caqh_check onOffToOn):**
+```python
+import datetime
+
+def onOffToOn(channel, sampleIndex, val, prev):
+    payload = {
+        "action": "caqh_recheck",
+        "triggered_by": "dashboard_button",
+        "triggered_at": datetime.datetime.utcnow().isoformat() + "Z"
+    }
+    import json
+    wc = op('webClient_action_post')
+    wc.par.url = 'https://{n8n_host}/webhook/caqh-recheck'
+    wc.par.submitbody = json.dumps(payload)
+    wc.par.method = 'POST'
+    wc.par.request.pulse()
+    # Set badge to RUNNING
+    setBadgeState('caqh', 'RUNNING')
+    # Store last action type for quick-poll
+    parent().store('last_action_type', 'caqh_recheck')
+    # Start 5-second poll timer
+    op('timer_post_action_poll').par.start.pulse()
+```
+
+**Result display (if DONE):** Badge shows `[ CAQH CHECK OK ]` in GREEN. Tooltip (via Text TOP adjacent to badge, shown on hover — or always-visible sub-text): `"Last attested: {date}  Next due: {date}"`. Next refresh cycle will update compliance panel CAQH row with new expiry date.
+
+**Result display (if FAILED):** Badge shows `[ CAQH CHECK ERR ]` in RED. `timer_badge_reset_failed` starts (30-second countdown). After 30 seconds, badge returns to IDLE. Error detail is visible in Automation Tracker (Panel 8).
+
+---
+
+### 9.5 Button 2: Generate Compliance Report
+
+**Label:** `[ COMPLIANCE REPORT ]`
+**Confirmation tier:** IMMEDIATE (generates a document — read-only query of Supabase, no external state modification)
+**n8n webhook URL:** `https://{n8n_host}/webhook/compliance-report`
+
+**JSON payload:**
+```json
+{
+  "action": "compliance_report",
+  "triggered_by": "dashboard_button",
+  "triggered_at": "{ISO timestamp}"
+}
+```
+
+**n8n workflow actions:**
+1. Query `credential_alert_queue` — get all credentials with alert levels
+2. Query `payer_credentialing_alerts` — get all payer re-cred urgency data
+3. Query `obligations` — get all active and overdue obligations
+4. Generate formatted markdown or PDF report covering: credential summary, payer re-cred status, obligation checklist, HIPAA compliance flags
+5. Save report to designated Google Drive folder (`Brighter Days / Compliance Reports / report-{YYYY-MM-DD}.pdf`)
+6. Write file URL to `automation_log.details`
+7. Write `status='completed'` to `automation_log`
+
+**Result display (if DONE):** Badge shows `[ COMPLIANCE REPORT OK ]` in GREEN. Automation Tracker entry shows: `[HH:MM] COMPLIANCE REPORT .......... OK (report-2026-03-01.pdf)`. The file URL in `automation_log.details` is visible when expanding the tracker entry.
+
+**Result display (if FAILED):** Badge shows `[ COMPLIANCE REPORT ERR ]` in RED. Holds 30 seconds then resets to IDLE.
+
+---
+
+### 9.6 Button 3: Trigger Payer Status Checks
+
+**Label:** `[ PAYER STATUS ]`
+**Confirmation tier:** IMMEDIATE (read-only checks across payer portals — no state modification beyond writing automation_log and updating payer_tracker if new info found)
+**n8n webhook URL:** `https://{n8n_host}/webhook/payer-status-check`
+
+**JSON payload:**
+```json
+{
+  "action": "payer_status_check",
+  "triggered_by": "dashboard_button",
+  "triggered_at": "{ISO timestamp}"
+}
+```
+
+**n8n workflow actions:**
+1. For each payer in `payer_tracker` with a `portal_url` value, check credentialing status via web automation (where feasible)
+2. Write summary of results to `automation_log.details` (e.g., `"Checked 6/17 payers — 5 active, 1 pending. 11 payers require manual portal login."`)
+3. If new contract or re-cred date found for any payer: PATCH `payer_tracker` row with updated data
+4. Write `status='completed'` to `automation_log`
+
+**Automation caveat (IMPORTANT):** Many payer portals require manual login with 2FA or do not have automated check endpoints. The initial n8n implementation may only automate a subset of the 17 payers. The `automation_log.details` field documents which payers were checked vs. which require manual action. The developer should note which portals are automatable in the n8n workflow documentation.
+
+**Result display:** Badge shows `[ PAYER STATUS OK ]` in GREEN. Tracker shows status with count of portals checked.
+
+---
+
+### 9.7 Button 4: Send Patient Communications
+
+**Label:** `[ SEND COMMS ]`
+**Confirmation tier:** CONFIRM REQUIRED — this button sends an external email and must not fire accidentally. A confirmation dialog overlay is required before the webhook fires.
+
+**Flow:**
+1. User clicks `[ SEND COMMS ]` button
+2. `container_confirm_dialog` overlay appears (centered on screen, PANEL_BG background with 70% opacity dark overlay behind)
+3. User selects communication type and enters recipient info
+4. User clicks `[ CONFIRM SEND ]` → webhook fires
+5. User clicks `[ CANCEL ]` → dialog closes, no action taken
+
+**Confirmation dialog spec (container_confirm_dialog):**
+
+```
++===================================================+
+|  SEND PATIENT COMMUNICATION                       |
++===================================================+
+|                                                   |
+|  Communication Type:                              |
+|    [INTAKE PACKET] [APPOINTMENT REMINDER]         |
+|    [CONSENT FORMS]                                |
+|                                                   |
+|  Recipient First Name:  [________________]        |
+|  Recipient Email:       [________________]        |
+|                                                   |
+|  ─────────────────────────────────────────────   |
+|  PREVIEW:                                         |
+|  "Hello {name}, please find attached..."          |
+|                                                   |
+|  ─────────────────────────────────────────────   |
+|                                                   |
+|         [ CONFIRM SEND ]     [ CANCEL ]           |
+|                                                   |
++===================================================+
+```
+
+**Dialog operators:**
+| Operator | Type | Purpose |
+|----------|------|---------|
+| `text_dialog_header` | Text TOP | "SEND PATIENT COMMUNICATION" in active border |
+| `button_type_intake` | Button COMP | Select "Intake Packet" comm type |
+| `button_type_reminder` | Button COMP | Select "Appointment Reminder" comm type |
+| `button_type_consent` | Button COMP | Select "Consent Forms" comm type |
+| `text_input_first_name` | Text COMP | Recipient first name input field |
+| `text_input_email` | Text COMP | Recipient email input field |
+| `text_preview` | Text TOP | Template preview text (updates based on comm type selection) |
+| `button_confirm_send` | Button COMP | GREEN — triggers webhook |
+| `button_cancel` | Button COMP | RED — closes dialog, no action |
+
+**n8n webhook URL (fired on Confirm):** `https://{n8n_host}/webhook/send-communication`
+
+**JSON payload (fired on Confirm):**
+```json
+{
+  "action": "send_communication",
+  "comm_type": "{intake_packet | appointment_reminder | consent_forms}",
+  "recipient_email": "{email entered by user}",
+  "recipient_first_name": "{first name entered by user}",
+  "triggered_by": "dashboard_button",
+  "triggered_at": "{ISO timestamp}"
+}
+```
+
+**PHI handling note:** The email address entered in the dialog is sent in the webhook payload to n8n and used for email delivery. It is NOT stored in Supabase. The `automation_log` row records only the `action_type` (`send_communication`), `comm_type`, and `triggered_at` — not the recipient email or first name. This keeps patient contact info out of the dashboard data layer.
+
+**n8n workflow actions:**
+1. Receive webhook payload
+2. Select email template based on `comm_type`
+3. Send templated email via SendGrid (or n8n Email node) to `recipient_email`
+4. Write `status='completed'` or `status='failed'` to `automation_log` — details field includes `comm_type` and anonymized result (`"sent to [email]"` — note: including email in details field is acceptable since automation_log is not patient record; developer may omit if preferred)
+5. Do NOT write `recipient_email` to any Supabase table other than `automation_log.details` (optional)
+
+**Google Workspace requirement:** The SendGrid account or n8n Email node must use a Google Workspace–based sender address (`@brighterdays...` domain) with active BAA. Consumer Gmail sender addresses cannot be used for patient communications (HIPAA violation). This is a pre-launch blocker documented in Section 11B.
+
+**Python (Panel Execute DAT — button_send_comms onOffToOn):**
+```python
+def onOffToOn(channel, sampleIndex, val, prev):
+    # Show confirmation dialog — DO NOT fire webhook yet
+    op('container_confirm_dialog').par.display = 1
+    # Reset dialog fields
+    parent().store('comm_type', None)
+    op('text_input_first_name').par.text = ''
+    op('text_input_email').par.text = ''
+    op('text_preview').par.text = 'Select a communication type above to see preview'
+```
+
+**Python (button_confirm_send onOffToOn):**
+```python
+import datetime, json
+
+def onOffToOn(channel, sampleIndex, val, prev):
+    comm_type = parent().fetch('comm_type', None)
+    first_name = op('text_input_first_name').par.text
+    email = op('text_input_email').par.text
+
+    if not comm_type or not first_name or not email:
+        op('text_preview').par.text = 'ERROR: All fields required before sending.'
+        return
+
+    payload = {
+        "action": "send_communication",
+        "comm_type": comm_type,
+        "recipient_email": email,
+        "recipient_first_name": first_name,
+        "triggered_by": "dashboard_button",
+        "triggered_at": datetime.datetime.utcnow().isoformat() + "Z"
+    }
+    wc = op('webClient_action_post')
+    wc.par.url = 'https://{n8n_host}/webhook/send-communication'
+    wc.par.submitbody = json.dumps(payload)
+    wc.par.method = 'POST'
+    wc.par.request.pulse()
+    # Hide dialog, set badge to RUNNING
+    op('container_confirm_dialog').par.display = 0
+    setBadgeState('comms', 'RUNNING')
+    parent().store('last_action_type', 'send_communication')
+    op('timer_post_action_poll').par.start.pulse()
+```
+
+---
+
+### 9.8 Inline Status Badge State Machine
+
+Each button has a dedicated Text TOP badge (`text_badge_caqh`, `text_badge_report`, `text_badge_payer`, `text_badge_comms`). The badge transitions through four states:
+
+**State machine:**
+```
+IDLE → (button pressed) → RUNNING → (n8n completes) → DONE
+                                   → (n8n fails)    → FAILED → (30s timer) → IDLE
+```
+
+**Visual states per button (using CAQH CHECK as example):**
+
+| State | Badge Text | Color | Animation |
+|-------|-----------|-------|-----------|
+| IDLE | `[ CAQH CHECK ]` | GREEN | None — static |
+| RUNNING | `[ CAQH CHECK ... ]` | AMBER | Pattern CHOP (Square, 4Hz) drives character cycle `\|/-\` appended to label |
+| DONE | `[ CAQH CHECK OK ]` | GREEN | 3-pulse flash (Timer CHOP Once, 3 segments), then static |
+| FAILED | `[ CAQH CHECK ERR ]` | RED | Static for 30 seconds, then fade back to IDLE |
+
+**Python setBadgeState function (shared utility in a Script DAT):**
+```python
+def setBadgeState(button_name, state):
+    """
+    button_name: 'caqh' | 'report' | 'payer' | 'comms'
+    state: 'IDLE' | 'RUNNING' | 'DONE' | 'FAILED'
+    """
+    labels = {
+        'caqh':   ('CAQH CHECK',        'CAQH CHECK ... ', 'CAQH CHECK OK ', 'CAQH CHECK ERR'),
+        'report': ('COMPLIANCE REPORT', 'REPORT ...     ', 'REPORT OK      ', 'REPORT ERR    '),
+        'payer':  ('PAYER STATUS',      'PAYER STATUS ..', 'PAYER STATUS OK', 'PAYER STATUS ER'),
+        'comms':  ('SEND COMMS',        'SEND COMMS ... ', 'SEND COMMS OK  ', 'SEND COMMS ERR'),
+    }
+    colors = {
+        'IDLE':    (0.0,  0.9,  0.2),   # GREEN
+        'RUNNING': (1.0,  0.6,  0.0),   # AMBER
+        'DONE':    (0.0,  0.9,  0.2),   # GREEN
+        'FAILED':  (1.0,  0.1,  0.05),  # RED
+    }
+    state_idx = {'IDLE': 0, 'RUNNING': 1, 'DONE': 2, 'FAILED': 3}
+
+    badge_op = op(f'text_badge_{button_name}')
+    label_set = labels[button_name]
+    color = colors[state]
+    idx = state_idx[state]
+
+    badge_op.par.text = f'[ {label_set[idx]} ]'
+    badge_op.par.textcolorr = color[0]
+    badge_op.par.textcolorg = color[1]
+    badge_op.par.textcolorb = color[2]
+
+    if state == 'FAILED':
+        op('timer_badge_reset_failed').par.start.pulse()
+    if state == 'DONE':
+        op('timer_badge_flash_done').par.start.pulse()  # 3-pulse flash timer
+```
+
+**State driven by automation_log:** The `execute_action_state` DAT Execute watches `webClient_action_poll` responses. When `webClient_action_poll` receives data:
+```python
+def onReceiveResponse(webClientDAT, statusCode, headerDict, data, id):
+    import json
+    if statusCode != 200:
+        return
+    rows = json.loads(data)
+    if not rows:
+        return
+    row = rows[0]  # Latest log entry for this action_type
+    status = row.get('status', 'pending')
+    action_type = row.get('action_type', '')
+
+    # Map action_type to button_name
+    button_map = {
+        'caqh_recheck': 'caqh',
+        'compliance_report': 'report',
+        'payer_status_check': 'payer',
+        'send_communication': 'comms',
+    }
+    button_name = button_map.get(action_type)
+    if not button_name:
+        return
+
+    if status == 'completed':
+        setBadgeState(button_name, 'DONE')
+    elif status == 'failed':
+        setBadgeState(button_name, 'FAILED')
+    # If status == 'running' or 'pending': no change needed (badge already shows RUNNING)
+```
+
+---
+
+### 9.9 Panel Layout
+
+```
++#=====================================================================#+
+|  COMMAND CENTER                                                        |
++#=====================================================================#+
+|                                                                        |
+|   [ CAQH CHECK ]           [ COMPLIANCE REPORT ]                      |
+|   [ CAQH CHECK OK ]         Last run: 09:00                           |
+|                                                                        |
+|   [ PAYER STATUS ]          [ SEND COMMS ]                            |
+|   [ PAYER STATUS OK ]        Last run: 08:45                          |
+|                                                                        |
+|   Tip: Click any button to trigger an automation. Results appear       |
+|   in the Automation Tracker (right panel) within 30-60 seconds.       |
+|                                                                        |
++#=====================================================================#+
+```
+
+Buttons are arranged in a 2×2 grid. Each button has its badge directly below it. The panel occupies the full bottom-left two-column span of the dashboard grid.
+
+**Button COMP configuration:**
+- Each Button COMP is styled as a large clickable region (not a physical button graphic — styled as a Text TOP with a border that changes on hover/click)
+- Hover state: Border color brightens (CYAN), achieved via Panel Execute DAT watching `rollover` value
+- Active (pressed) state: Border flashes WHITE once (INTERACTION state — Section 3.4)
+
+---
+
+## Section 10: Panel 8 — Automation Process Tracker (DASH-08)
+
+### 10.1 Purpose
+
+Full scrollable history of every automation triggered from the dashboard — what ran, when, whether it succeeded, and any details (file links, error messages, counts of items checked). This panel provides the audit trail and the operational feedback loop: Valentina can see at a glance whether last week's CAQH check succeeded or whether the compliance report is ready.
+
+**Container COMP:** `panel_automation` — positioned bottom-right (see Section 2.3 layout coordinates). Dimensions: 852 × 500 px at 2560×1440 (1280 × 750 at 3840×2160).
+
+---
+
+### 10.2 Operators Inside panel_automation
+
+| Operator | Type | Purpose |
+|----------|------|---------|
+| `text_header_automation` | Text TOP | Panel title: "AUTOMATION LOG" |
+| `text_log_content` | Text TOP | Scrolling ASCII log of automation history |
+| `table_automation_data` | Table DAT | Parsed `automation_log` rows from Supabase |
+| `script_log_response` | Script DAT | Python: parse Web Client DAT JSON response into table_automation_data |
+| `button_scroll_up` | Button COMP | Scroll log up (older entries) |
+| `button_scroll_down` | Button COMP | Scroll log down (newer entries) |
+| `container_log_detail` | Container COMP | Hidden detail overlay — expands on log entry click |
+| `pattern_idle_breath` | Pattern CHOP | Sine wave 0.2 Hz — idle border animation |
+| `pattern_alert_pulse` | Pattern CHOP | Square wave 1 Hz — alert border animation for FAILED entries |
+| `execute_state_automation` | DAT Execute | Watches table_automation_data, manages scroll and state |
+| `execute_detail_overlay` | DAT Execute | Manages log_detail overlay show/hide |
+
+---
+
+### 10.3 Data Source
+
+**Supabase query (via webClient_automation_log in panel_grid):**
+```
+GET /rest/v1/automation_log
+  ?select=id,action_type,triggered_at,triggered_by,status,details,completed_at
+  &order=triggered_at.desc
+  &limit=20
+```
+
+Returns the 20 most recent automation log entries, newest first.
+
+**Quick-poll after button press (from panel_actions):** `webClient_action_poll` (in `panel_actions`) fires 5 seconds after any button click and updates `table_automation_data` in this panel. This ensures the RUNNING → DONE/FAILED transition appears promptly without waiting for the global refresh cycle.
+
+**Refresh cadence:**
+- Normal: Global polling cycle (Timer CHOP onCycle, default 30-min interval)
+- Post-action: 5-second quick poll after any button press (triggered by `timer_post_action_poll` in `panel_actions`)
+
+---
+
+### 10.4 Display Format — Scrolling ASCII Log
+
+Each entry in the automation log renders as a single line using dot-leader fill for alignment:
+
+```
++================================================+
+|  AUTOMATION LOG               [20 entries]    |
++================================================+
+|                                                |
+|  [14:32] CAQH CHECK ............... OK         |
+|  [14:30] COMPLIANCE REPORT ......... OK        |
+|  [09:15] PAYER STATUS .............. FAILED    |
+|  [09:00] SEND COMMS ................ OK        |
+|  [08:45] CAQH CHECK ................ OK        |
+|  [Yesterday 14:00] COMPLIANCE REPORT .. OK     |
+|                                                |
+|  (scroll up for older entries)                 |
+|                                               |
+|  [^] scroll up                 [v] scroll down |
++================================================+
+```
+
+**Dot-leader fill:** Each log line uses dots between the action name and status to fill a fixed-width column (similar to a table of contents). The fill width is calculated so all status labels align in the rightmost column:
+
+```python
+def format_log_line(action_type, triggered_at, status, details=None):
+    import datetime
+    # Format time
+    try:
+        dt = datetime.datetime.fromisoformat(triggered_at.replace('Z', '+00:00'))
+        # Convert to local time for display
+        time_str = dt.strftime('[%H:%M]')
+    except:
+        time_str = '[??:??]'
+
+    # Action type display name mapping
+    action_labels = {
+        'caqh_recheck': 'CAQH CHECK',
+        'compliance_report': 'COMPLIANCE REPORT',
+        'payer_status_check': 'PAYER STATUS',
+        'send_communication': 'SEND COMMS',
+        'credential_alert_email': 'CRED ALERT EMAIL',
+        'obligation_autocomplete': 'AUTO-COMPLETE',
+    }
+    label = action_labels.get(action_type, action_type.upper()[:18])
+
+    # Status display
+    status_map = {
+        'completed': 'OK',
+        'failed': 'FAILED',
+        'running': 'RUNNING...',
+        'pending': 'PENDING...',
+    }
+    status_str = status_map.get(status, status.upper())
+
+    # Optional short detail suffix
+    detail_suffix = ''
+    if details and status == 'completed':
+        # Show first 20 chars of details in parentheses
+        short = str(details)[:20].rstrip()
+        detail_suffix = f' ({short})'
+
+    # Dot-leader fill: total line width = 48 chars
+    LINE_WIDTH = 48
+    left_part = f'{time_str} {label}'
+    right_part = f'{status_str}{detail_suffix}'
+    dots_count = max(1, LINE_WIDTH - len(left_part) - len(right_part))
+    dots = '.' * dots_count
+
+    return f'{left_part} {dots} {right_part}'
+```
+
+**Color coding per status:**
+- `OK` / `completed`: GREEN `(0.0, 0.9, 0.2)`
+- `FAILED`: RED `(1.0, 0.1, 0.05)` — and triggers `pattern_alert_pulse` on the panel border
+- `RUNNING...` / `PENDING...`: AMBER `(1.0, 0.6, 0.0)` with spinning indicator
+- Timestamps and dot leaders: DIM_WHITE `(0.5, 0.5, 0.5)`
+
+**Per-line color:** Because each log entry may have a different color, use one Text TOP per visible log line (up to 10 visible at a time), composited with Over TOP chain — consistent with the per-row approach in the compliance panel (Section 5.6).
+
+---
+
+### 10.5 Scroll Behavior
+
+- Default: shows last 20 entries, newest at top. Panel displays ~8–10 entries in the visible area.
+- `button_scroll_up`: shifts `log_scroll_offset` by +1 (shows older entries — earlier in time)
+- `button_scroll_down`: shifts `log_scroll_offset` by -1 (shows newer entries — back to top)
+- Auto-scroll: When new entry appears (detected by comparing `table_automation_data` row count or latest `triggered_at` vs previous), panel automatically scrolls back to top to show the new entry.
+
+**Auto-scroll Python (in execute_state_automation):**
+```python
+_previous_top_id = None
+
+def onTableChange(dat):
+    global _previous_top_id
+    if dat.numRows < 2:
+        return
+    current_top_id = dat[1, 'id'].val
+    if current_top_id != _previous_top_id:
+        # New entry appeared — reset to top
+        parent().store('log_scroll_offset', 0)
+        _previous_top_id = current_top_id
+    rebuild_log_display(dat)
+```
+
+---
+
+### 10.6 Expandable Detail Overlay
+
+Clicking any log entry opens `container_log_detail` — a popup overlaying the bottom portion of the dashboard showing the full details for that automation run:
+
+```
++=========================================================+
+|  AUTOMATION DETAIL                               [CLOSE] |
++=========================================================+
+|                                                          |
+|  Action:         CAQH RE-ATTESTATION CHECK               |
+|  Triggered:      2026-03-01T14:32:00Z                   |
+|  Completed:      2026-03-01T14:32:47Z                   |
+|  Duration:       47 seconds                              |
+|  Triggered by:   dashboard_button                        |
+|                                                          |
+|  Status:         OK (completed)                          |
+|                                                          |
+|  Details:                                                |
+|    Last attested: 2026-01-01. Next due: 2026-05-01.     |
+|    Credentials table updated: CAQH expiry_date set.     |
+|                                                          |
++=========================================================+
+```
+
+**Fields displayed:**
+- `action_type` → human-readable label (use `action_labels` dict from Section 10.4)
+- `triggered_at` → full ISO timestamp
+- `completed_at` → full ISO timestamp (if available; `null` if still running or failed early)
+- Duration: `completed_at - triggered_at` in seconds (or `"—"` if not completed)
+- `triggered_by` → value from `automation_log.triggered_by` column
+- `status` → full status string
+- `details` → full text of `automation_log.details` column (unrestricted length in overlay, unlike the truncated version in the log line)
+
+**Click detection:** A Panel Execute DAT on each log-line Button COMP (or Y-coordinate calculation for the log content area) detects which row was clicked. The clicked row's `id` is stored in Python and used to display the correct detail overlay content.
+
+**Close button:** `[CLOSE]` button sets `container_log_detail.par.display = 0`.
+
+---
+
+### 10.7 Running Indicator in Log
+
+When a log entry has `status='running'` or `status='pending'`, the status column shows an animated spinner:
+
+```python
+SPINNER = ['|', '/', '-', '\\']
+_spin_idx = 0
+
+def onValueChange(channel, sampleIndex, val, prev):
+    global _spin_idx
+    # Pattern CHOP (Square, 4Hz) drives this callback
+    if channel.name == 'chan1' and val == 1:
+        _spin_idx = (_spin_idx + 1) % 4
+        # Find running/pending rows in table_automation_data and update their display
+        rebuild_log_display_with_spinner(_spin_idx)
+```
+
+**Spinner display:** `RUNNING... |` → `RUNNING... /` → `RUNNING... -` → `RUNNING... \` cycling at 4 Hz.
+
+---
+
+### 10.8 Animation States for Automation Panel
+
+| State | Trigger | Animation |
+|-------|---------|-----------|
+| IDLE | All entries are `completed` or `failed` | Border: sine wave 0.2Hz, subtle CYAN |
+| RUNNING | Any entry has `status='running'` | Border: square wave 0.5Hz, AMBER + spinner in status column |
+| FAILED | Latest entry has `status='failed'` | Border: square wave 1Hz, RED pulse (clears after 60s or next successful run) |
+| LOADING | Web Client DAT fetching | Spinner in panel header |
+
+---
+
+### 10.9 automation_log Table DDL
+
+The `automation_log` table must be created in Supabase before the dashboard can be used. This DDL should be run as part of the Phase 4 database migration:
+
+```sql
+-- automation_log: history of all dashboard-triggered and scheduled automations
+CREATE TABLE automation_log (
+    id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    action_type     text NOT NULL,
+        -- Values: 'caqh_recheck', 'compliance_report', 'payer_status_check',
+        --         'send_communication', 'credential_alert_email', 'obligation_autocomplete'
+    triggered_at    timestamptz NOT NULL DEFAULT now(),
+    triggered_by    text NOT NULL DEFAULT 'dashboard_button',
+        -- Values: 'dashboard_button', 'scheduled', 'auto'
+    status          text NOT NULL DEFAULT 'pending',
+        -- Values: 'pending', 'running', 'completed', 'failed'
+    details         text,           -- Free-form result text (error message, file URL, summary)
+    completed_at    timestamptz,    -- NULL until automation finishes (success or failure)
+    created_at      timestamptz NOT NULL DEFAULT now()
+);
+
+-- Index for dashboard queries (newest first, filtered by action_type)
+CREATE INDEX automation_log_triggered_at_idx ON automation_log (triggered_at DESC);
+CREATE INDEX automation_log_action_type_idx ON automation_log (action_type, triggered_at DESC);
+
+-- Row-level security: service role key has full access (consistent with other tables)
+ALTER TABLE automation_log ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Service role full access" ON automation_log
+    USING (auth.role() = 'service_role')
+    WITH CHECK (auth.role() = 'service_role');
+```
+
+**n8n automation_log write pattern:** Every n8n workflow triggered by a dashboard button must follow this write sequence:
+
+```javascript
+// Step 1: Write 'running' status immediately when webhook received
+// (n8n Supabase node: INSERT into automation_log)
+const log_id = uuid();
+await supabase.from('automation_log').insert({
+    id: log_id,
+    action_type: payload.action,
+    triggered_at: payload.triggered_at,
+    triggered_by: payload.triggered_by,
+    status: 'running'
+});
+
+// ... workflow executes ...
+
+// Step 2: Update to 'completed' or 'failed' when done
+await supabase.from('automation_log').update({
+    status: 'completed',  // or 'failed'
+    details: 'Result description here',
+    completed_at: new Date().toISOString()
+}).eq('id', log_id);
+```
+
+This two-step write ensures the dashboard badge transitions through RUNNING before settling on DONE or FAILED — providing real-time feedback even for long-running automations.
+
+---
+
+### 10.10 Full Phase 4 Supabase DDL Migration
+
+All five new tables for Phase 4 in one migration script. Run against Supabase via the Management API (see developer notes in Section 11A, Step 7):
+
+```sql
+-- ============================================================
+-- Phase 4: Brighter Days Dashboard — New Table DDL
+-- Run once before first dashboard launch
+-- ============================================================
+
+-- 1. tebra_appointments: PHI-stripped appointment display data
+CREATE TABLE tebra_appointments (
+    appointment_id  text PRIMARY KEY,
+        -- SOAP API: native Tebra appointment ID (integer as text)
+        -- CSV: 'CSV_{YYYY-MM-DD}_{HH:MM}'
+        -- Manual: 'MANUAL_' || gen_random_uuid()::text
+    patient_first_name  text NOT NULL,  -- First name ONLY. Never last name or full name.
+    appointment_time    timestamptz NOT NULL,
+    appointment_date    date NOT NULL,  -- Extracted date (for WHERE appointment_date = TODAY)
+    appointment_type    text,           -- 'Initial Intake', 'Follow-Up', etc.
+    sync_method         text NOT NULL DEFAULT 'api',
+        -- Values: 'api', 'csv', 'manual'
+    synced_at           timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX tebra_appts_date_idx ON tebra_appointments (appointment_date, appointment_time ASC);
+
+ALTER TABLE tebra_appointments ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Service role full access" ON tebra_appointments
+    USING (auth.role() = 'service_role')
+    WITH CHECK (auth.role() = 'service_role');
+
+-- 2. tebra_billing_summary: aggregated billing data (no patient detail)
+CREATE TABLE tebra_billing_summary (
+    period              text PRIMARY KEY,   -- Format: 'YYYY-MM' (one row per month)
+    claims_submitted    integer NOT NULL DEFAULT 0,
+    claims_denied       integer NOT NULL DEFAULT 0,
+    denial_rate         numeric(5,2) NOT NULL DEFAULT 0,  -- Percentage, pre-computed
+    ar_current          numeric(10,2) NOT NULL DEFAULT 0,  -- AR aged < 30 days
+    ar_30               numeric(10,2) NOT NULL DEFAULT 0,  -- AR aged 30-59 days
+    ar_60               numeric(10,2) NOT NULL DEFAULT 0,  -- AR aged 60-89 days
+    ar_90plus           numeric(10,2) NOT NULL DEFAULT 0,  -- AR aged 90+ days
+    total_ar            numeric(10,2) NOT NULL DEFAULT 0,  -- Sum of all AR buckets
+    sync_method         text NOT NULL DEFAULT 'api',
+    synced_at           timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE tebra_billing_summary ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Service role full access" ON tebra_billing_summary
+    USING (auth.role() = 'service_role')
+    WITH CHECK (auth.role() = 'service_role');
+
+-- 3. automation_log: history of all dashboard-triggered and scheduled automations
+-- (See Section 10.9 for full DDL — reproduced here for completeness)
+CREATE TABLE IF NOT EXISTS automation_log (
+    id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    action_type     text NOT NULL,
+    triggered_at    timestamptz NOT NULL DEFAULT now(),
+    triggered_by    text NOT NULL DEFAULT 'dashboard_button',
+    status          text NOT NULL DEFAULT 'pending',
+    details         text,
+    completed_at    timestamptz,
+    created_at      timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS automation_log_triggered_at_idx ON automation_log (triggered_at DESC);
+CREATE INDEX IF NOT EXISTS automation_log_action_type_idx ON automation_log (action_type, triggered_at DESC);
+
+ALTER TABLE automation_log ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Service role full access" ON automation_log
+    USING (auth.role() = 'service_role')
+    WITH CHECK (auth.role() = 'service_role');
+
+-- 4. dashboard_settings: key-value store for configurable preferences
+CREATE TABLE dashboard_settings (
+    key     text PRIMARY KEY,
+    value   text NOT NULL
+);
+
+-- Seed with default values
+INSERT INTO dashboard_settings (key, value) VALUES
+    ('audio_enabled',                   'false'),
+    ('chime_type',                      'chime_clear'),
+    ('audio_trigger_level',             '7_day'),
+    ('refresh_interval_seconds',        '1800'),
+    ('tebra_integration_tier',          'manual'),
+    ('tebra_last_sync',                 NULL),
+    ('show_next_business_day_on_weekends', 'true'),
+    ('resolution',                      '2560x1440')
+ON CONFLICT (key) DO NOTHING;
+
+ALTER TABLE dashboard_settings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Service role full access" ON dashboard_settings
+    USING (auth.role() = 'service_role')
+    WITH CHECK (auth.role() = 'service_role');
+
+-- 5. obligations: compliance and operational obligations checklist
+CREATE TABLE obligations (
+    id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    title               text NOT NULL,
+    description         text,
+    category            text NOT NULL DEFAULT 'operational',
+        -- Values: 'regulatory', 'operational'
+    due_date            date,           -- NULL for recurring items without a fixed date
+    recurrence          text,           -- 'annual', 'semi-annual', 'quarterly', 'monthly', 'recurring', NULL
+    recurrence_interval integer,        -- Days between recurrences (for recurrence='recurring')
+    status              text NOT NULL DEFAULT 'active',
+        -- Values: 'active', 'snoozed', 'completed', 'overdue'
+    notes               text,
+    snoozed_until       date,           -- NULL unless status='snoozed'
+    completed_at        timestamptz,    -- NULL unless status='completed'
+    auto_completable    boolean NOT NULL DEFAULT false,
+    action_type         text,           -- Matches automation_log.action_type values (for auto-complete linking)
+    created_at          timestamptz NOT NULL DEFAULT now(),
+    updated_at          timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX obligations_status_due_idx ON obligations (status, due_date ASC NULLS LAST);
+CREATE INDEX obligations_action_type_idx ON obligations (action_type) WHERE action_type IS NOT NULL;
+
+-- Trigger to auto-update updated_at on any row change
+CREATE OR REPLACE FUNCTION update_obligations_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = now();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER obligations_updated_at_trigger
+    BEFORE UPDATE ON obligations
+    FOR EACH ROW EXECUTE FUNCTION update_obligations_updated_at();
+
+ALTER TABLE obligations ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Service role full access" ON obligations
+    USING (auth.role() = 'service_role')
+    WITH CHECK (auth.role() = 'service_role');
+```
+
+**Run order:** Create tables in the order listed (1 → 5). There are no foreign key dependencies between Phase 4 tables or between Phase 4 and Phase 1/2 tables. The obligations table is standalone (it does not FK into credentials or compliance_items — it references them by `action_type` string matching only).
+
+---
+
+## Section 11: Developer Implementation Guide
+
+### 11A: Setup Checklist
+
+Complete these steps in order before first dashboard launch:
+
+1. **Install TouchDesigner** 2023.11340 or newer from [derivative.ca](https://derivative.ca). Use the commercial or non-commercial license based on deployment context.
+
+2. **Create TD project** with Container COMP hierarchy per Section 2.1. Set up Window COMP for external monitor output at target resolution (Section 2.2).
+
+3. **Load IBM Plex Mono font:** Download from Google Fonts, place `IBMPlexMono-Regular.ttf` and `IBMPlexMono-Bold.ttf` at `{td_project_root}/assets/fonts/`. Reference with relative path in all Text TOP Font File parameters.
+
+4. **Configure Supabase connection:**
+   - Store Supabase URL and `service_role_key` in a TD Table DAT named `config_secrets` — NOT in Python code or n8n environment variables
+   - Set up Web Client DAT headers per Section 2.4 (`webClient_credentials`, `webClient_appointments`, etc.)
+   - Test with a GET to `credential_alert_queue` — verify JSON response with credential rows
+
+5. **Set up n8n on DigitalOcean (178.128.12.34 or new droplet):**
+   - Install n8n via Docker (`docker run -it --rm --name n8n -p 5678:5678 n8nio/n8n`) or npm global install
+   - Set environment variable: `EXECUTIONS_DATA_SAVE_ON_SUCCESS=false` (PHI safety — see Section 8A.2)
+   - Configure webhook URLs for all 4 action buttons (Section 9.3–9.7)
+   - Store Tebra Customer Key in n8n credential vault (NEVER in TD, Supabase, or environment variables)
+   - Set up all 8 n8n workflows listed in Section 11C
+
+6. **Run Phase 4 Supabase schema migration** (Section 10.10 DDL):
+   - Use Supabase Management API: `POST api.supabase.com/v1/projects/{ref}/database/query` with `sbp_*` key
+   - Run DDL in order: tebra_appointments → tebra_billing_summary → automation_log → dashboard_settings → obligations
+   - After DDL, reload PostgREST: `NOTIFY pgrst, 'reload schema'`
+   - Verify all 5 tables appear in Supabase Table Editor
+
+7. **Seed initial data:**
+   - `dashboard_settings` seeded automatically by the DDL (INSERT … ON CONFLICT DO NOTHING)
+   - `obligations` table: run seed SQL from Section 6.9
+   - After seeding, manually update `due_date` values for items where Valentina's actual dates are known
+
+8. **Configure macOS auto-launch:**
+   - Add TouchDesigner (or a shell script opening the `.toe` file) to macOS Login Items: System Settings → General → Login Items → click `+` → select TouchDesigner or the script
+   - Enable Perform Mode startup in TouchDesigner: Edit → Preferences → General → "Open in Perform Mode on startup"
+
+9. **Verify end-to-end data flow:**
+   - Trigger a manual CAQH CHECK from the dashboard
+   - Confirm `automation_log` row appears in Supabase with `status='running'` then `status='completed'`
+   - Confirm Automation Tracker panel (Panel 8) updates within 10 seconds of button press
+   - Confirm badge transitions IDLE → RUNNING → DONE
+
+---
+
+### 11B: Pre-Launch Data Requirements
+
+These items MUST be resolved before the dashboard can function correctly. None of them are developer tasks — they require input from Valentina or Maxi:
+
+**1. CAQH Attestation Date (BLOCKER — Dashboard shows `[???]` until resolved)**
+Valentina must:
+- Log into [proview.caqh.org](https://proview.caqh.org) with CAQH ID 16149210
+- Navigate to the Attestation tab
+- Find the last attestation date
+- Report the date to Maxi
+
+Maxi then: `UPDATE credentials SET expiry_date = '{last_attestation_date}'::date + INTERVAL '120 days' WHERE credential_type = 'caqh';`
+
+Until this is done, the CAQH row shows `[???]` in AMBER — never GREEN — per the locked architectural decision in STATE.md.
+
+**2. Tebra Customer Key**
+- Retrieve from Tebra portal: Help → Get Customer Key (or Settings → API Keys)
+- Required for Tier 1 SOAP API integration
+- Store in n8n credential vault (Credential Type: Generic, field name: `tebraCustomerKey`)
+- Without this: dashboard defaults to Tier 3 (manual entry mode) for appointment and billing panels
+
+**3. Nine Payer Contract Date Confirmations**
+These 9 payers have ESTIMATED re-credentialing dates (marked with `~` prefix on dashboard). Valentina must confirm actual re-cred dates with each payer's provider relations line:
+- California Health & Wellness
+- Coastal Communities (Prospect Medical)
+- Facey Medical Group
+- Health Net CA
+- Hoag Health Network
+- Magellan Health
+- Providence Health
+- Torrance IPA
+- Torrance Memorial Medical Center IPA
+
+Once confirmed: `UPDATE payer_tracker SET recred_is_estimated = false, recred_due_date = '{confirmed_date}' WHERE payer_name = '{name}';`
+
+**4. Business License Renewal (OVERDUE — Active Blocker)**
+City of Torrance BL-LIC-051057 expired 2025-12-31. Dashboard shows pulsing RED `[EXPIRED]` badge until renewed. Valentina must renew at [torranceca.gov](https://torranceca.gov). After renewal: update `obligations` table row and `credentials` table if the business license is tracked there.
+
+**5. Google Workspace Migration (Required for SEND COMMS Button)**
+The `[ SEND COMMS ]` action button requires a Google Workspace email account with BAA enabled. Consumer Gmail (`valentinaparkmd@gmail.com`) cannot send HIPAA-covered patient communications. Target date: 2026-03-15. Until this is resolved: the SEND COMMS button can fire but the n8n workflow will fail with a HIPAA compliance error.
+
+---
+
+### 11C: n8n Workflow Inventory
+
+Every n8n workflow required by this spec, with trigger type, actions, and which Supabase table(s) each writes to:
+
+| Workflow | Trigger | Key Actions | Writes To |
+|----------|---------|-------------|-----------|
+| Tebra Appointment Sync | Schedule (every 15 min) | SOAP GetAppointments → strip PHI (first name only) → upsert | `tebra_appointments` |
+| Tebra Billing Sync | Schedule (every 30 min) | SOAP GetTransactions → aggregate into buckets → upsert | `tebra_billing_summary` |
+| CAQH Re-Attestation Check | Webhook (`/webhook/caqh-recheck`) | Authenticate to CAQH ProView → check attestation status → update credentials if new date found | `automation_log`, `credentials` |
+| Compliance Report Generator | Webhook (`/webhook/compliance-report`) | Query all credential/payer/obligation tables → generate markdown/PDF → save to Google Drive → log file URL | `automation_log` |
+| Payer Status Check | Webhook (`/webhook/payer-status-check`) | Check automatable payer portals → log count and results → update payer_tracker if new info found | `automation_log`, `payer_tracker` |
+| Send Communication | Webhook (`/webhook/send-communication`) | Select email template by comm_type → send via SendGrid/Email node → log result | `automation_log` |
+| Credential Alert Email | Schedule (daily 7:00 AM PT) | Query `credential_alert_queue` for items expiring within 30 days → compose summary email → send to Valentina | `automation_log` |
+| Obligation Auto-Complete | Internal trigger (called by other workflows on success) | Check if completed automation matches `auto_completable=true` obligations → PATCH obligation status to `completed` | `obligations` |
+
+**Workflow count:** 8 workflows total. Minimum required for dashboard to function: workflows 1–6. Workflows 7–8 are enhancement workflows that add automation beyond the core dashboard display.
+
+**n8n credential vault entries required:**
+- `Tebra API` (type: Generic) — fields: `tebraUsername`, `tebraPassword`, `tebraCustomerKey`
+- `Supabase Brighter Days` (type: Generic) — fields: `supabaseUrl`, `serviceRoleKey`
+- `Google Drive` (type: OAuth2) — for CSV export monitoring and report file saving
+- `SendGrid` (type: Generic API) — field: `apiKey` — OR use n8n Email node with SMTP credentials for Google Workspace
+- `CAQH ProView` (type: Generic) — fields: `username`, `password` (Valentina's CAQH login)
+
+---
+
+### 11D: HIPAA Compliance Summary
+
+All HIPAA notes from throughout this spec consolidated for easy review and audit documentation:
+
+**PHI scope on dashboard:**
+- Patient first name + appointment time only (Panel 1 and Panel 5)
+- No last names, no dates of birth, no diagnoses, no insurance IDs, no CPT codes, no clinical notes appear anywhere on the dashboard or in the Supabase tables the dashboard reads from
+
+**n8n PHI handling:**
+- Self-hosted n8n on DigitalOcean: set `EXECUTIONS_DATA_SAVE_ON_SUCCESS=false` to prevent PHI storage in execution logs (Option A — stateless passthrough)
+- Alternative: Keragon (HIPAA-native, BAA included) for any workflow that touches patient names (Option B — see Section 8A.2)
+- PHI stripping occurs in n8n Code nodes BEFORE writing to Supabase — Supabase never receives full patient records
+
+**Tebra credentials:**
+- Tebra Customer Key: stored ONLY in n8n credential vault. Never in TD, Supabase, environment variables, or any file on disk.
+- Tebra API user: create a dedicated read-only user for API access (minimum necessary access per HIPAA minimum necessary standard)
+
+**Email communications:**
+- `[ SEND COMMS ]` button requires Google Workspace sender with active BAA — consumer Gmail is not permitted for patient communications
+- `recipient_email` entered in dialog: transmitted to n8n in webhook payload, used for email delivery, NOT stored in Supabase (only `action_type` and timestamp logged)
+
+**Physical security:**
+- External monitor must be in Valentina's private workspace — not visible to patients in waiting areas, building common areas, or through windows (HIPAA Security Rule 45 CFR 164.310(c) physical safeguard)
+- Screenshots or prints of the appointments panel (showing first names + times) should be treated as limited PHI
+
+**Supabase access control:**
+- All dashboard tables use Row Level Security with service role access only
+- Service role key stored in TD `config_secrets` Table DAT — not in Python code
+- Supabase project dedicated to Brighter Days — NOT shared with FindItNOW or any other project
+
+---
+
+### 11E: Open Questions for Developer
+
+Remaining unknowns that the developer must resolve during implementation. None of these are blockers for building the TD project or n8n scaffolding, but they must be answered before going live:
+
+1. **Tebra SOAP WSDL URL:** The exact WSDL endpoint URL must be confirmed from the Tebra API Integration Technical Guide PDF. Request directly from Tebra support after obtaining the Customer Key. The spec uses `https://webservice.kareo.com/services/soap/2.1/KareoServices.svc` as the documented endpoint — verify this is current.
+
+2. **Tebra rate limits:** Not publicly documented. The 15–30 minute polling interval is safe for a solo practice (~4–8 appointments/day volume). If Tebra imposes rate limits that cause API errors, fall back to Tier 2 (CSV export) for the affected workflows.
+
+3. **Keragon pricing:** Contact Keragon sales (`hello@keragon.com`) if PHI-in-workflow risk tolerance requires a BAA-covered automation platform. Keragon has 18 Tebra-specific actions. Compare cost vs. self-hosted n8n + stateless passthrough (Option A).
+
+4. **macOS vs. Windows for TD runtime:** This spec assumes macOS (CoreAudio for audio output). If Valentina's dedicated display machine runs Windows: replace `Audio Device Out CHOP` CoreAudio configuration with DirectSound equivalent. All other TD functionality is cross-platform.
+
+5. **Always-on behavior:** A dedicated Mac Mini or similar low-power desktop (not a laptop) is recommended for always-on dashboard operation. Laptops may sleep when lid is closed. Configure macOS Energy Saver to "Prevent computer from sleeping automatically" when the AC adapter is connected.
+
+6. **CAQH ProView automation:** CAQH ProView may require multi-factor authentication or CAPTCHA during login, which could block automated scraping. Developer should verify whether CAQH has an API endpoint for attestation status queries, or whether n8n will need a browser automation node (e.g., Selenium via n8n Code node). If automation is not feasible, the CAQH Check button degrades to a URL-display action (opening the CAQH portal URL for Valentina to check manually).
+
+---
+
+### 11F: Phase 5 Handoff Notes
+
+What the Phase 5 (AI Automation) implementation plan needs from this spec:
+
+**Shared data surfaces:**
+- `automation_log` is the integration point between the dashboard and AI systems. Phase 5 AI workflows write to `automation_log` using the same schema — the dashboard will automatically display AI-triggered automations in Panel 8 without code changes.
+- `obligations` table supports `auto_completable=true` and `action_type` columns specifically designed for AI workflow integration. Phase 5 AI workflows mark obligations complete by writing to this table.
+
+**n8n workflow inventory as starting point:**
+- Section 11C's 8-workflow inventory is the baseline for Phase 5. AI automation expands the scheduled trigger workflows (Credential Alert Email, Obligation Auto-Complete) and adds new proactive monitoring workflows.
+
+**Regulatory monitoring integration:**
+- Phase 5 AI regulatory monitoring (AI-02, AI-03, AI-04) will write new obligation rows to the `obligations` table when new compliance requirements are detected. The dashboard's Panel 3 (Obligations Checklist) already renders all `obligations` rows — no TD changes required to display AI-generated obligations.
+
+**AI form pre-fill (AI-01):**
+- The credential and payer data in Supabase (`credentials` table, `payer_tracker` table, `credential_alert_queue` view) is the data source for AI-assisted form pre-fill. Phase 5 reads these tables directly — no new Supabase tables needed for AI-01.
+
+**Context for Phase 5 developer:**
+- TD and n8n are already in place. Phase 5 extends n8n workflows — it does not modify TD.
+- The dashboard spec (this document) is the single source of truth for the data model. Phase 5 adds workflows that write to existing tables — it does not add new tables.
+- The `automation_log.triggered_by` field distinguishes dashboard-button triggers (`'dashboard_button'`) from AI triggers (`'ai_scheduled'` or `'ai_triggered'`) from scheduled triggers (`'scheduled'`). Phase 5 workflows must use `triggered_by = 'ai_triggered'` when writing to `automation_log`.
