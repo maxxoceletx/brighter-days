@@ -128,3 +128,10 @@ None — research file contained all required clinical details (C-SSRS, CANRA co
 ---
 *Phase: 03-clinical-business-operations*
 *Completed: 2026-03-01*
+
+## Self-Check: PASSED
+
+- FOUND: .planning/phases/03-clinical-business-operations/sop-03-crisis-protocol.md
+- FOUND: .planning/phases/03-clinical-business-operations/03-02-SUMMARY.md
+- FOUND commit: 36c90da (feat: create SOP-03 crisis protocol)
+- FOUND commit: 7ce741f (docs: complete plan metadata)
