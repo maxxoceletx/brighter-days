@@ -13,7 +13,7 @@ Brighter Days launches through five phases that move from legal verification to 
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Compliance Audit & Verification** - Verify every legal, regulatory, and insurance obligation for operating a CA telehealth psychiatry practice
-- [ ] **Phase 2: Credential Vault & Monitoring** - Organize all practice credentials into a single system with expiry tracking and alerts
+- [x] **Phase 2: Credential Vault & Monitoring** - Organize all practice credentials into a single system with expiry tracking and alerts
 - [ ] **Phase 3: Clinical & Business Operations** - Document every SOP, workflow, and procedure needed to run the practice
 - [ ] **Phase 4: Dashboard Command Center Specification** - Produce a complete spec for the TouchDesigner-based practice command center (spec for handoff, not built by GSD)
 - [ ] **Phase 5: AI Automation Specification** - Produce a complete spec for AI-powered form filling and compliance monitoring (spec for handoff, not built by GSD)
@@ -62,11 +62,12 @@ Plans:
   3. A crisis protocol document specifies exactly what happens during a telehealth session when a patient is in crisis, including emergency contacts, 988 referral, and documentation requirements
   4. A business structure document describes the current Valentina Park MD, PC S-Corp setup, roles (Valentina as owner, Maxi as CTO), and the deferred Brighter Days entity plan
   5. A third-party biller onboarding document specifies what data billers need, how they access Tebra, and what reporting Valentina expects from them
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 03-01: TBD
-- [ ] 03-02: TBD
+- [ ] 03-01-PLAN.md -- Patient intake workflow SOP (OPS-01) and CURES database check SOP (OPS-02)
+- [ ] 03-02-PLAN.md -- Crisis protocol SOP (OPS-03) with tiered escalation, CANRA quick-reference, safety plan template, post-crisis documentation
+- [ ] 03-03-PLAN.md -- Business structure documentation (OPS-04) and biller onboarding SOP (OPS-05)
 
 ### Phase 4: Dashboard Command Center Specification
 **Goal**: A complete, implementable specification exists for the TouchDesigner-based practice command center that a developer can build from without further discovery
@@ -114,6 +115,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 |-------|----------------|--------|-----------|
 | 1. Compliance Audit & Verification | 3/3 | Complete | 2026-02-27 |
 | 2. Credential Vault & Monitoring | 2/2 | Complete | 2026-02-27 |
-| 3. Clinical & Business Operations | 0/2 | Not started | - |
+| 3. Clinical & Business Operations | 0/3 | Not started | - |
 | 4. Dashboard Command Center Specification | 0/3 | Not started | - |
 | 5. AI Automation Specification | 0/1 | Not started | - |
