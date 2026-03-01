@@ -1036,3 +1036,476 @@ def onTableChange(dat):
 ### 5.13 HIPAA Note
 
 The compliance status panel displays credential names and numbers. While credential data is not patient PHI, the display of `credential_number` (e.g., DEA number FP3833933) on an external monitor visible to unauthorized individuals could enable prescriber impersonation. This panel should be on a monitor in a private workspace, consistent with the physical security note in Section 4.14.
+
+---
+
+## Section 6: Panel 3 — Obligations Checklist / Credential Expiry Tracker (DASH-03)
+
+### 6.1 Purpose
+
+Running task list of everything that needs doing — the dashboard IS the task management system for compliance obligations. When Valentina opens the dashboard, the obligations panel tells her exactly what's due and how soon. Unlike a mirror of an external system, this panel owns the obligation lifecycle: items are created here, marked complete here, snoozed here, and auto-completed by n8n automations writing back to Supabase.
+
+### 6.2 Container COMP
+
+`panel_credentials` — positioned top-right in the dashboard grid (see Section 2.3 layout coordinates). Dimensions: 480 × 480 px at 2560×1440 (960 × 960 at 3840×2160).
+
+### 6.3 Data Sources
+
+| Source | Query | Purpose |
+|--------|-------|---------|
+| `obligations` table | `WHERE status='active' OR (status='snoozed' AND snoozed_until < NOW())` | Primary obligations list |
+| `credential_alert_queue` view | All rows with alert_level != 'CURRENT' | Credential-specific countdowns (Phase 2 view) |
+| Combined Python merge | Union both sources, dedup by obligation_id | Single sorted list rendered by panel |
+
+**Web Client DAT:** `dat_obligations` — polls Supabase `/rest/v1/obligations?select=*&status=neq.completed&order=due_date.asc` every refresh cycle (Timer CHOP onCycle). Second Web Client DAT `dat_credential_alerts` polls `credential_alert_queue` view.
+
+**Python merge:** A `script_obligations_merge` Text DAT merges both result sets into a single list. Items from `credential_alert_queue` are converted to pseudo-obligation rows with `obligation_id = 'CRED_' + credential_id`, so they participate in the same sort and color-coding as manual obligations.
+
+### 6.4 Obligation Scope
+
+The obligations panel covers two categories:
+
+**Regulatory obligations (from compliance_items + credentials tables or pre-seeded obligations rows):**
+- CA Medical License renewal (G145321)
+- DEA Certificate renewal (FP3833933) — update address first (active blocker)
+- NPI profile review (annual)
+- CAQH re-attestation (every 120 days — highest-risk single credential)
+- BAA renewals (Google Workspace, Tebra, Spruce Health)
+- Malpractice insurance renewal
+- Business license renewal (City of Torrance BL-LIC-051057 — OVERDUE as of 12/31/2025)
+- DEA telehealth flexibility tracking (expires Dec 31, 2026 — compliance calendar must include this)
+
+**Operational obligations (recurring):**
+- Monthly: Third-party biller performance review
+- Quarterly: Tax filing / estimated tax payment
+- Quarterly: SOP review (rotate through SOP-01 through SOP-05 on 5-quarter cycle)
+- Annual: CAQH PECOS re-enrollment review
+- Annual: Payer re-credentialing window tracking (all 17 payers)
+- Semi-annual: Controlled substance agreement review
+
+**NOT included in this panel:** Individual patient follow-ups, day-to-day clinical tasks, appointment scheduling. Those stay in Tebra.
+
+### 6.5 Display Format
+
+Each obligation row renders as a single line:
+
+```
+[COLOR PREFIX] X days until [Obligation Title]
+```
+
+**Examples:**
+```
+[GREEN ]  847 days until CA Medical License Renewal
+[YELLOW]   62 days until CAQH Re-Attestation
+[RED   ]   14 days until Malpractice Insurance Renewal
+[!!!!  ]    0 days — OVERDUE: Business License Renewal (pinned)
+[~YELL ]  ~180 days until Blue Cross Re-Cred (est.)
+```
+
+**Color coding:**
+| Days Remaining | Color | TD constant |
+|----------------|-------|-------------|
+| > 90 days | GREEN | `(0.2, 1.0, 0.4)` |
+| 30–90 days | YELLOW | `(1.0, 1.0, 0.2)` |
+| < 30 days | RED | `(1.0, 0.3, 0.2)` |
+| Overdue (past due date) | PULSING RED | `(1.0, 0.0, 0.0)` + square wave 1Hz |
+| Estimated date | Same color + `~` prefix | see Section 6.6 |
+
+**Overdue items pinned to top:** Items with `status='overdue'` OR `due_date < TODAY()` always appear at the top of the list, above all active items, sorted by most-overdue first.
+
+**Pulsing ASCII border on overdue items:** Overdue rows get an animated border using Pattern CHOP (square wave, 1Hz) that toggles between:
+```
+!> OVERDUE: Business License Renewal (0 days past due) <!
+```
+and:
+```
+   OVERDUE: Business License Renewal (0 days past due)
+```
+This creates a visible pulsing/blinking effect that is impossible to miss.
+
+### 6.6 Estimated Date Visual Treatment
+
+Obligation items sourced from `payer_tracker` with `recred_is_estimated=true` (9 of 17 payers) must display a `~` prefix on the days count and `(est.)` suffix on the obligation title. This prevents over-trust in estimated dates.
+
+```
+[~YELL ]  ~180 days until Blue Cross Re-Cred (est.)
+[~YELL ]  ~612 days until Aetna Re-Cred (est.)
+```
+
+Python detection (consistent with Section 5.8):
+```python
+is_estimated = row.get('recred_is_estimated', False)
+prefix = '~' if is_estimated else ''
+suffix = ' (est.)' if is_estimated else ''
+display_title = f"{row['title']}{suffix}"
+days_str = f"{prefix}{days} days"
+```
+
+### 6.7 Interactivity
+
+Three interactive actions per obligation row:
+
+**Mark Complete:**
+- Click `[DONE]` button on any row (Button COMP, per-row)
+- Web Client DAT executes PATCH to Supabase: `PATCH /rest/v1/obligations?id=eq.{id}` with body `{"status": "completed", "completed_at": "<NOW_ISO>"}`
+- Row disappears from active list on next refresh (or immediately on optimistic update — Python marks row hidden before refresh)
+- Completed items are NOT shown by default; a `[SHOW COMPLETED]` toggle Button COMP at panel bottom reveals them in dim CYAN with strikethrough treatment
+
+**Snooze:**
+- Click `[ZZZ]` button opens a small inline snooze picker (not a full overlay — just a set of 4 Button COMPs appearing below the row):
+  ```
+  Snooze for: [1 week] [2 weeks] [1 month] [Custom...]
+  ```
+- Selection executes PATCH: `{"status": "snoozed", "snoozed_until": "<DATE_ISO>"}`
+- Snoozed items disappear from list until `snoozed_until` date passes
+- Snooze indicator shows on Today panel (DASH-01) snapshot as count of snoozed items
+
+**Add Notes:**
+- Click `[NOTE]` button expands a text input area below the row (Text COMP or Button COMP with keyboard input via Python)
+- User types note and presses Enter or clicks `[SAVE NOTE]`
+- PATCH to Supabase: `{"notes": "<text>"}`
+- Notes preview (first 40 chars) shows inline on the row as dim CYAN text below the main obligation line
+
+### 6.8 Auto-Completion
+
+When `auto_completable = true` on an obligations row AND an n8n workflow writes `status='completed'` to that row (e.g., after a successful CAQH check automation), the dashboard detects the change on next refresh and:
+
+1. Animates the row with a brief GREEN flash (3 pulses using Timer CHOP)
+2. Adds a note to the row: `"Auto-completed by [action_type] on [timestamp]"` (the n8n workflow must write this to `obligations.notes` before closing the row)
+3. Moves the row to the completed list
+
+The `action_type` values are defined in the automation spec (Phase 5):
+- `"CAQH_CHECK"` — CAQH re-attestation workflow
+- `"PAYER_STATUS_CHECK"` — payer credentialing status check
+- `"REPORT_GENERATE"` — compliance report generation
+
+### 6.9 Initial Data Population (Seed SQL)
+
+On first launch, pre-seed the `obligations` table with all known obligations. A developer should run this SQL against Supabase before first dashboard launch:
+
+```sql
+-- Obligations table seed for Brighter Days Dashboard
+-- Run once before first dashboard launch
+
+INSERT INTO obligations (
+    title, description, category, due_date, recurrence,
+    recurrence_interval, auto_completable, action_type, status
+) VALUES
+
+-- REGULATORY OBLIGATIONS
+('CA Medical License Renewal', 'License G145321 — renew via BreEZe portal at breeze.ca.gov', 'regulatory', '2028-06-30', 'biennial', NULL, false, NULL, 'active'),
+('DEA Certificate Renewal', 'DEA FP3833933 — must update address from Walnut Creek to Torrance first (21 CFR 1301.51)', 'regulatory', '2027-03-31', 'triennial', NULL, false, NULL, 'active'),
+('CAQH Re-Attestation', 'CAQH ID 16149210 — every 120 days at proview.caqh.org. CRITICAL: missed attestation silently suspends all 17 payer contracts.', 'regulatory', NULL, 'recurring', 120, true, 'CAQH_CHECK', 'active'),
+('NPI Profile Annual Review', 'Review NPI 1013141390 profile at nppes.cms.hhs.gov for accuracy', 'regulatory', NULL, 'annual', NULL, false, NULL, 'active'),
+('Google Workspace BAA Verification', 'Verify BAA is active in Google Workspace Admin Console — required for HIPAA compliance', 'regulatory', '2026-03-15', NULL, NULL, false, NULL, 'active'),
+('Tebra BAA Verification', 'Confirm Tebra BAA on file and up to date', 'regulatory', '2026-03-15', NULL, NULL, false, NULL, 'active'),
+('Malpractice Insurance Renewal', 'Renew professional liability insurance — check expiry with carrier', 'regulatory', NULL, NULL, NULL, false, NULL, 'active'),
+('Business License Renewal', 'City of Torrance BL-LIC-051057 — EXPIRED 12/31/2025. Renew immediately at torranceca.gov', 'regulatory', '2025-12-31', 'annual', NULL, false, NULL, 'overdue'),
+('DEA Telehealth Flexibility Expiry', 'DEA telehealth prescribing flexibility expires Dec 31, 2026 — monitor for extension or new rule', 'regulatory', '2026-12-31', NULL, NULL, false, NULL, 'active'),
+
+-- OPERATIONAL OBLIGATIONS
+('Monthly Biller Performance Review', 'Review third-party biller AR report, denial rate, and collections. See SOP-05.', 'operational', NULL, 'monthly', NULL, false, NULL, 'active'),
+('Quarterly Tax Filing / Estimated Payment', 'Estimated quarterly tax payment to IRS and CA FTB. Consult CPA.', 'operational', NULL, 'quarterly', NULL, false, NULL, 'active'),
+('Annual CAQH PECOS Re-Enrollment Review', 'Verify PECOS enrollment status and CAQH profile completeness for Medicare/Medicaid', 'operational', NULL, 'annual', NULL, true, 'CAQH_CHECK', 'active'),
+('SOP Annual Review — SOP-01', 'Annual review of SOP-01 (Patient Intake) per Phase 3 documentation', 'operational', NULL, 'annual', NULL, false, NULL, 'active'),
+('SOP Annual Review — SOP-02', 'Annual review of SOP-02 (CURES Protocol) per Phase 3 documentation', 'operational', NULL, 'annual', NULL, false, NULL, 'active'),
+('SOP Annual Review — SOP-03', 'Annual review of SOP-03 (Crisis Response) — ensure peer consultation contacts current', 'operational', NULL, 'annual', NULL, false, NULL, 'active'),
+('SOP Annual Review — SOP-04', 'Annual review of SOP-04 (Business Structure) — update after attorney/CPA entity guidance', 'operational', NULL, 'annual', NULL, false, NULL, 'active'),
+('SOP Annual Review — SOP-05', 'Annual review of SOP-05 (Billing Oversight) per Phase 3 documentation', 'operational', NULL, 'annual', NULL, false, NULL, 'active'),
+('Controlled Substance Agreement Semi-Annual Review', 'Review controlled substance agreements for all Schedule II patients per SOP-02', 'operational', NULL, 'semi-annual', NULL, false, NULL, 'active');
+```
+
+**After running seed SQL:** Maxi must manually update `due_date` for items with `NULL` due_date using Valentina's actual records. Items without due_date will not display in calendar view — only in obligations checklist.
+
+### 6.10 Scroll Behavior
+
+When the obligations list exceeds panel height (~12–15 visible rows at standard line height):
+- `button_obligations_scroll_up` and `button_obligations_scroll_down` appear at panel bottom
+- Python variable `obligations_scroll_offset` tracks current top row
+- Auto-scroll: if no user interaction in 10 seconds, panel cycles through all items at 0.003 Hz ramp (Pattern CHOP)
+
+### 6.11 Animation States for Obligations Panel
+
+| State | Trigger | Animation |
+|-------|---------|-----------|
+| IDLE | No overdue, no near-due | Border: sine wave 0.2Hz, subtle shimmer |
+| ALERT | Any item < 7 days | Border: square wave 2Hz, AMBER/RED pulsing |
+| OVERDUE | Any item past due_date | Border: square wave 1Hz, RED pulsing; overdue rows blink independently |
+| LOADING | Web Client DAT fetching | Spinner character cycling `|/-\` in panel header |
+| INTERACTION | User clicked DONE/SNOOZE/NOTE | Row highlight flash, button feedback |
+
+### 6.12 Panel Header
+
+```
++================================================+
+|  OBLIGATIONS & EXPIRY TRACKER      [REFRESH]   |
+|  Active: 14   Snoozed: 2   Overdue: 1   [ALL]  |
++================================================+
+```
+
+Header counts update on each data refresh. `[ALL]` toggles to show completed + snoozed items in dim text. `[REFRESH]` triggers an immediate poll cycle (Web Client DAT pulse, bypassing Timer CHOP interval).
+
+---
+
+## Section 7: Panel 4 — Compliance & Operations Calendar (DASH-04)
+
+### 7.1 Purpose
+
+See all deadlines on a timeline — both urgency-sorted (primary view) and date-positioned (secondary view). The calendar panel answers two questions: "What's coming up?" (countdown list) and "When exactly?" (calendar grid). It draws from all dated items across all sources — obligations, credentials, and payer re-credentialing windows.
+
+### 7.2 Container COMP
+
+`panel_calendar` — positioned bottom-left in the dashboard grid (see Section 2.3 layout coordinates). Dimensions: 480 × 480 px at 2560×1440 (960 × 960 at 3840×2160).
+
+### 7.3 Data Sources
+
+Combined query pulling all dated items from three sources:
+
+| Source | Fields | Condition |
+|--------|--------|-----------|
+| `obligations` table | `title, due_date, category, status` | `status != 'completed' AND due_date IS NOT NULL` |
+| `credential_alert_queue` view | `credential_name, expiry_date, alert_level` | All rows |
+| `payer_credentialing_alerts` view | `payer_name, recred_due_date, recred_is_estimated` | All rows |
+
+**Python merge into unified calendar items:**
+```python
+CalendarItem = {
+    'title': str,
+    'due_date': date,       # Python date object
+    'days_remaining': int,  # Negative = overdue
+    'category': str,        # 'regulatory', 'operational', 'credential', 'payer'
+    'is_estimated': bool,   # True for payer rows with recred_is_estimated=True
+    'source': str,          # 'obligations', 'credential', 'payer'
+    'source_id': str        # For PATCH/update routing
+}
+```
+
+All three sources are pulled by a single `script_calendar_merge` that unions them into a list of CalendarItem dicts, then sorts by `days_remaining` ascending.
+
+### 7.4 Two View Modes
+
+The calendar panel has two view modes toggled by a Button COMP in the panel header:
+
+**Mode A (PRIMARY — default): Countdown List**
+
+Chronological list showing all items due in the next 12 months, grouped by month:
+
+```
++================================================+
+|  COMPLIANCE CALENDAR    [LIST] / [GRID]         |
++================================================+
+|  OVERDUE (1)                                    |
+|    [!] Business License          0d OVERDUE     |
+|                                                 |
+|  MARCH 2026 (3)                                 |
+|    [R] Google Workspace BAA     14d             |
+|    [R] Tebra BAA Verification   14d             |
+|    [O] Monthly Biller Review    28d             |
+|                                                 |
+|  APRIL 2026 (1)                                 |
+|    [R] CAQH Re-Attestation      47d             |
+|                                                 |
+|  JUNE 2026 (2)                                  |
+|    [O] Quarterly Tax Q2         92d             |
+|    [R] DEA Telehealth Expires  305d             |
+|                                                 |
+|  (... more months below, scroll to view)        |
++================================================+
+```
+
+Category badges: `[R]` = Regulatory, `[O]` = Operational, `[C]` = Credential, `[P]` = Payer
+
+Color coding matches obligations panel (GREEN/YELLOW/RED by days remaining).
+
+**Mode B (SECONDARY): Monthly Calendar Grid**
+
+ASCII grid of the current month. Each date cell shows obligation count badge if items are due:
+
+```
++================================================+
+|  COMPLIANCE CALENDAR    [LIST] / [GRID]        |
+|  << MARCH 2026                            >>   |
++================================================+
+|  Sun   Mon   Tue   Wed   Thu   Fri   Sat       |
+|  ─────────────────────────────────────────     |
+|    1     2     3     4     5     6     7        |
+|               [1]                               |
+|    8     9    10    11    12    13    14        |
+|                                  [2]           |
+|   15    16    17    18    19    20    21        |
+|                                                |
+|   22    23    24    25    26    27    28        |
+|   [1]                                          |
+|   29    30    31                               |
+|                                                |
++================================================+
+| Click a date to see obligations due that day   |
++================================================+
+```
+
+- `[N]` badge = N obligations due on that date. Badge color: GREEN for far-future, AMBER for 30–90 days, RED for < 30 days.
+- Overdue dates get a pulsing `[!]` badge in RED instead of a count.
+- Navigation arrows `<<` and `>>` step through months (Button COMPs, Python `calendar_month_offset` variable).
+- Click a date: Python detects which cell was clicked (Y coordinate + column calculation), shows a detail overlay listing all obligations due on that date.
+
+### 7.5 View Toggle Implementation
+
+```python
+# calendar_mode: 'list' or 'grid' — stored in Python global, persists during session
+# toggle_calendar Button COMP onOffToOn callback:
+def onOffToOn(channel, sampleIndex, val, prev):
+    global calendar_mode
+    calendar_mode = 'grid' if calendar_mode == 'list' else 'list'
+    op('container_calendar_list').par.display = 1 if calendar_mode == 'list' else 0
+    op('container_calendar_grid').par.display = 1 if calendar_mode == 'grid' else 0
+    # Update toggle button appearance
+    op('text_toggle_list').par.textcolorr = 1.0 if calendar_mode == 'list' else 0.4
+    op('text_toggle_grid').par.textcolorr = 1.0 if calendar_mode == 'grid' else 0.4
+```
+
+Toggle button ASCII display: `[LIST]` is bright (selected) / dim (unselected), `[GRID]` inverse. Both are Button COMPs with Text TOP labels.
+
+### 7.6 Calendar Grid Rendering
+
+The monthly grid is rendered by a Python script (`script_calendar_render`) that builds a multi-line string into a single Text TOP:
+
+```python
+import calendar
+import datetime
+
+def render_calendar_grid(year, month, obligation_dates: dict) -> str:
+    """
+    obligation_dates: dict of {day_int: (count, max_severity)}
+    max_severity: 'overdue', 'red', 'amber', 'green'
+    Returns: multi-line string for Text TOP
+    """
+    cal = calendar.monthcalendar(year, month)
+    header = f"  Sun   Mon   Tue   Wed   Thu   Fri   Sat"
+    separator = "  " + "─" * 44
+    lines = [header, separator]
+    for week in cal:
+        # Row 1: date numbers
+        date_row = ""
+        badge_row = ""
+        for day in week:
+            if day == 0:
+                date_row += "       "
+                badge_row += "       "
+            else:
+                date_row += f"  {day:2d}   "
+                if day in obligation_dates:
+                    count, severity = obligation_dates[day]
+                    if severity == 'overdue':
+                        badge_row += f"  [!]  "
+                    else:
+                        badge_row += f"  [{count}]  "
+                else:
+                    badge_row += "       "
+        lines.append(date_row)
+        if any(d != 0 and d in obligation_dates for d in week):
+            lines.append(badge_row)
+        lines.append("")
+    return "\n".join(lines)
+```
+
+**Color handling for grid:** A single Text TOP cannot apply per-cell colors. Use a Lookup TOP or Python-built overlay: for each obligation badge cell, a separate small Text TOP renders the badge in the correct color, composited over the grid background via Over TOP chain. Limit to badges only — date numbers are monochrome.
+
+### 7.7 Overdue Escalation in Calendar Panel
+
+The calendar panel participates in overdue escalation (primary escalation defined in Section 3 — overdue banner):
+
+- **Pulsing ASCII border:** When any item is overdue, `panel_calendar` border animates with square wave 1Hz (Pattern CHOP) — same treatment as obligations panel (Section 6.11)
+- **Overdue section pinned to top:** In List mode, the OVERDUE group always renders at the top, even if due dates would sort them elsewhere
+- **Grid mode overdue:** Past dates with overdue items show `[!]` in RED (see Section 7.4)
+- **Audio alerts:** When any item transitions to EXPIRED status (detected on data refresh by comparing new vs. previous alert levels), AND `dashboard_settings.audio_enabled = true`, trigger `Audio Play CHOP` with the configured chime
+
+### 7.8 Audio Alert Configuration
+
+Audio alerts are configurable via a settings overlay accessible from the calendar panel header.
+
+**Settings icon:** Small `[♪]` (or `[SND]` in ASCII terminals) Button COMP in the panel header. Click opens `container_audio_settings` overlay.
+
+**Audio Settings Overlay:**
+```
++------------------------------------------+
+|  AUDIO ALERT SETTINGS               [X]  |
+|  ────────────────────────────────────── |
+|                                          |
+|  Audio Alerts:    [ON ] / [OFF]          |
+|                                          |
+|  Chime Sound:                            |
+|    ( ) chime_soft.wav                    |
+|    (•) chime_clear.wav   (default)       |
+|    ( ) chime_urgent.wav                  |
+|    ( ) chime_bell.wav                    |
+|    ( ) chime_alert.wav                   |
+|                                          |
+|  Alert Trigger Level:                    |
+|    ( ) 30-day warning                    |
+|    (•) 7-day warning     (default)       |
+|    ( ) Overdue only                      |
+|                                          |
+|            [SAVE]    [CANCEL]            |
++------------------------------------------+
+```
+
+**Settings persistence:** All audio settings are read from and written to the `dashboard_settings` Supabase table:
+
+| Key | Values | Default |
+|-----|--------|---------|
+| `audio_enabled` | `'true'` / `'false'` | `'false'` |
+| `chime_type` | `'chime_soft'` / `'chime_clear'` / `'chime_urgent'` / `'chime_bell'` / `'chime_alert'` | `'chime_clear'` |
+| `audio_trigger_level` | `'overdue_only'` / `'7_day'` / `'30_day'` | `'7_day'` |
+
+**`[SAVE]` button:** Executes PATCH to `dashboard_settings` for each changed key. `[CANCEL]` closes overlay without writing. `[X]` behaves same as CANCEL.
+
+**Audio file bundling:** Five `.wav` files (named per `chime_type` values above) are bundled in the TD project directory under `assets/audio/`. The Audio Play CHOP references these by path relative to TD project root. The developer must source or create these audio files — royalty-free chime sounds are recommended. Duration: 0.5–2 seconds per file.
+
+**Audio trigger implementation:**
+```python
+# In script_calendar_merge, after building CalendarItem list:
+# Check for new transitions to EXPIRED on this refresh cycle
+global _previous_calendar_levels
+audio_enabled = op('table_dashboard_settings')['audio_enabled', 1].val == 'true'
+trigger_level = op('table_dashboard_settings')['audio_trigger_level', 1].val
+
+for item in calendar_items:
+    prev_level = _previous_calendar_levels.get(item['source_id'], 'green')
+    curr_level = item_severity(item)  # returns 'overdue', 'red', 'amber', 'green'
+
+    should_alert = False
+    if trigger_level == 'overdue_only' and curr_level == 'overdue' and prev_level != 'overdue':
+        should_alert = True
+    elif trigger_level == '7_day' and curr_level in ('overdue', 'red') and prev_level not in ('overdue', 'red'):
+        should_alert = True
+    elif trigger_level == '30_day' and curr_level in ('overdue', 'red', 'amber') and prev_level not in ('overdue', 'red', 'amber'):
+        should_alert = True
+
+    if should_alert and audio_enabled:
+        chime = op('table_dashboard_settings')['chime_type', 1].val
+        op('audio_play_alert').par.file = f"assets/audio/{chime}.wav"
+        op('audio_play_alert').par.trigger.pulse()
+
+    _previous_calendar_levels[item['source_id']] = curr_level
+```
+
+### 7.9 Animation States for Calendar Panel
+
+| State | Trigger | Animation |
+|-------|---------|-----------|
+| IDLE | No overdue, no near-due | Border: sine wave 0.2Hz, subtle green shimmer |
+| APPROACHING | Any item 7–30 days | Border: sine wave 0.5Hz, YELLOW |
+| ALERT | Any item < 7 days | Border: square wave 2Hz, RED border |
+| OVERDUE | Any item past due_date | Border: square wave 1Hz, RED; `[!]` overdue items blink |
+| LOADING | Fetching calendar data | Spinner in panel header: `|/-\` cycling |
+
+### 7.10 Panel Header
+
+```
++================================================+
+|  COMPLIANCE CALENDAR  [LIST] / [GRID]  [SND]  |
+|  Items: 22   Overdue: 1   Next due: 14d       |
++================================================+
+```
+
+"Next due: 14d" shows the days remaining for the soonest non-overdue item. Updates on each refresh. Clicking `[SND]` opens the audio settings overlay (Section 7.8).
