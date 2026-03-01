@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-01T10:36:00Z"
+last_updated: "2026-03-01T10:46:01.627Z"
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 11
-  completed_plans: 9
+  completed_plans: 10
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-25)
 
 **Core value:** Valentina can confidently see her first telehealth patient knowing every compliance, billing, and operational requirement is met -- and has a single system to manage it all going forward.
-**Current focus:** Phase 4 IN PROGRESS — Dashboard Command Center Specification (Plan 01 of 3 complete)
+**Current focus:** Phase 4 IN PROGRESS — Dashboard Command Center Specification (Plan 02 of 3 complete)
 
 ## Current Position
 
 Phase: 4 of 4 (Dashboard Spec) — IN PROGRESS
-Plan: 1 of 3 complete in Phase 4 (9 of 11 total plans across all phases)
-Status: Phase 4 Plan 01 complete — master spec document with Sections 1-5 (architecture, TD hierarchy, ASCII aesthetic, Today panel DASH-01, Compliance panel DASH-02)
-Last activity: 2026-03-01 -- Phase 4 Plan 01 executed (dashboard architecture + panels 1-2 spec)
+Plan: 2 of 3 complete in Phase 4 (10 of 11 total plans across all phases)
+Status: Phase 4 Plan 02 complete — spec Sections 6-8 added (obligations checklist DASH-03, calendar DASH-04, Tebra integration DASH-05, billing oversight DASH-06)
+Last activity: 2026-03-01 -- Phase 4 Plan 02 executed (panels 3-6 spec: obligations, calendar, appointments, billing)
 
-Progress: [###########-] 82% (9 of 11 plans complete)
+Progress: [############] 91% (10 of 11 plans complete)
 
 ## Performance Metrics
 
@@ -49,6 +49,7 @@ Progress: [###########-] 82% (9 of 11 plans complete)
 - Trend: Consistent (~3-6 min/plan)
 
 *Updated after each plan completion*
+| Phase 04-dashboard-spec P02 | 5 | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -94,6 +95,9 @@ Recent decisions affecting current work:
 - [Phase 04-01]: Estimated payer re-cred dates (9 of 17) must show ~ prefix to distinguish from confirmed dates
 - [Phase 04-01]: Overdue banner cannot be dismissed — persists until all EXPIRED credentials resolved in Supabase
 - [Phase 04-01]: Per-row Text TOP composition (separate Text TOP per credential row) for compliance panel color coding
+- [Phase 04-02]: Three-tier Tebra fallback: SOAP API preferred, CSV export fallback, manual entry last resort — each tier independently implementable
+- [Phase 04-02]: HIPAA for n8n: stateless passthrough (EXECUTIONS_DATA_SAVE_ON_SUCCESS=false) default; Keragon as upgrade path if BAA coverage required
+- [Phase 04-02]: Obligations panel owns the obligation lifecycle — dashboard IS the task management system, not a mirror of Tebra
 
 ### Pending Todos
 
@@ -120,4 +124,4 @@ Recent decisions affecting current work:
 
 Last session: 2026-03-01
 Stopped at: Completed 04-01-PLAN.md (Phase 4 Plan 1 — dashboard architecture + compliance panels DASH-01, DASH-02)
-Resume file: 04-02-PLAN.md (Phase 4 Plan 2 — panels 3-6: credentials, calendar, appointments, billing)
+Resume file: 04-03-PLAN.md (Phase 4 Plan 3 — Actions panel, Automation Tracker, Supabase DDL, startup/persistence notes)

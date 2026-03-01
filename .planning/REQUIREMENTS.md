@@ -39,10 +39,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [x] **DASH-01**: TouchDesigner-based practice command center — central node for all practice operations, real-time visual interface
 - [x] **DASH-02**: Compliance status panel with visual indicators (green/yellow/red) for all licenses, certs, BAAs, and CAQH status
-- [ ] **DASH-03**: Running obligations checklist — interactive list of everything you need to do, with status and priority
-- [ ] **DASH-04**: Compliance and operations calendar — deadlines, renewals, CAQH attestation windows, filing dates, all in one view
-- [ ] **DASH-05**: Tebra API integration pulling appointment and billing data into dashboard (research cost, capabilities, and MCP availability)
-- [ ] **DASH-06**: Billing oversight view showing claims submitted, denials, AR aging from Tebra data (for monitoring third-party billers)
+- [x] **DASH-03**: Running obligations checklist — interactive list of everything you need to do, with status and priority
+- [x] **DASH-04**: Compliance and operations calendar — deadlines, renewals, CAQH attestation windows, filing dates, all in one view
+- [x] **DASH-05**: Tebra API integration pulling appointment and billing data into dashboard (research cost, capabilities, and MCP availability)
+- [x] **DASH-06**: Billing oversight view showing claims submitted, denials, AR aging from Tebra data (for monitoring third-party billers)
 - [ ] **DASH-07**: Functional action buttons — send emails, trigger automations, submit forms directly from dashboard (not just display)
 - [ ] **DASH-08**: Automation process tracker — visual status of running/completed automations (CAQH checks, email sends, form submissions)
 
@@ -115,10 +115,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | OPS-05 | Phase 3 | Complete |
 | DASH-01 | Phase 4 | Complete (04-01) |
 | DASH-02 | Phase 4 | Complete (04-01) |
-| DASH-03 | Phase 4 | Pending |
-| DASH-04 | Phase 4 | Pending |
-| DASH-05 | Phase 4 | Pending |
-| DASH-06 | Phase 4 | Pending |
+| DASH-03 | Phase 4 | Complete |
+| DASH-04 | Phase 4 | Complete |
+| DASH-05 | Phase 4 | Complete |
+| DASH-06 | Phase 4 | Complete |
 | DASH-07 | Phase 4 | Pending |
 | DASH-08 | Phase 4 | Pending |
 | AI-01 | Phase 5 | Pending |
