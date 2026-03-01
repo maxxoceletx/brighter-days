@@ -65,9 +65,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 03-01-PLAN.md -- Patient intake workflow SOP (OPS-01) and CURES database check SOP (OPS-02)
-- [ ] 03-02-PLAN.md -- Crisis protocol SOP (OPS-03) with tiered escalation, CANRA quick-reference, safety plan template, post-crisis documentation
-- [ ] 03-03-PLAN.md -- Business structure documentation (OPS-04) and biller onboarding SOP (OPS-05)
+- [x] 03-01-PLAN.md -- Patient intake workflow SOP (OPS-01) and CURES database check SOP (OPS-02)
+- [x] 03-02-PLAN.md -- Crisis protocol SOP (OPS-03) with tiered escalation, CANRA quick-reference, safety plan template, post-crisis documentation
+- [x] 03-03-PLAN.md -- Business structure documentation (OPS-04) and biller onboarding SOP (OPS-05)
 
 ### Phase 4: Dashboard Command Center Specification
 **Goal**: A complete, implementable specification exists for the TouchDesigner-based practice command center that a developer can build from without further discovery
@@ -82,12 +82,12 @@ Plans:
 
 **NOTE**: This phase produces a specification document for handoff to software development. GSD agents do not build the TouchDesigner dashboard -- they research, design, and document it.
 
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 04-01: TBD
-- [ ] 04-02: TBD
-- [ ] 04-03: TBD
+- [ ] 04-01-PLAN.md -- Architecture foundation: TD network hierarchy, Supabase schema, ASCII aesthetic rules, Today panel (DASH-01), Compliance Status panel (DASH-02)
+- [ ] 04-02-PLAN.md -- Data display panels: Obligations Checklist (DASH-03), Compliance Calendar (DASH-04), Tebra Integration (DASH-05), Billing Oversight (DASH-06)
+- [ ] 04-03-PLAN.md -- Action panels: Action Buttons (DASH-07), Automation Tracker (DASH-08), Developer Guide and Pre-Launch Checklist
 
 ### Phase 5: AI Automation Specification
 **Goal**: A complete specification exists for AI-powered form filling and compliance monitoring that defines exactly what the AI does, what data it needs, and how humans stay in the loop
@@ -116,5 +116,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | 1. Compliance Audit & Verification | 3/3 | Complete | 2026-02-27 |
 | 2. Credential Vault & Monitoring | 2/2 | Complete | 2026-02-27 |
 | 3. Clinical & Business Operations | 3/3 | Complete   | 2026-03-01 |
-| 4. Dashboard Command Center Specification | 0/3 | Not started | - |
+| 4. Dashboard Command Center Specification | 0/3 | Planned | - |
 | 5. AI Automation Specification | 0/1 | Not started | - |
