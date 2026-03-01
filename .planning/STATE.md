@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: unknown
-last_updated: "2026-02-27T13:00:54.300Z"
+status: complete
+last_updated: "2026-03-01T09:39:17Z"
 progress:
   total_phases: 3
-  completed_phases: 2
-  total_plans: 5
-  completed_plans: 5
+  completed_phases: 3
+  total_plans: 8
+  completed_plans: 8
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-25)
 
 **Core value:** Valentina can confidently see her first telehealth patient knowing every compliance, billing, and operational requirement is met -- and has a single system to manage it all going forward.
-**Current focus:** Phase 2: Credential Vault & Monitoring
+**Current focus:** Phase 3: Clinical & Business Operations
 
 ## Current Position
 
-Phase: 2 of 5 (Credential Vault & Monitoring) — IN PROGRESS
-Plan: 2 of 3 complete in Phase 2 (5 of ~15 total plans)
-Status: Phase 1 complete; Phase 2 Plans 1-2 complete — schema, seed, vault spec, payer dossiers, credential inventory, and alert architecture spec delivered
-Last activity: 2026-02-27 -- Phase 2 Plan 02 executed (payer tracker seed, credential inventory, alert architecture)
+Phase: 3 of 3 (Clinical & Business Operations) — IN PROGRESS
+Plan: 2 of 3 complete in Phase 3 (7 of ~8 total plans across all phases)
+Status: Phases 1-2 complete; Phase 3 Plans 1-2 complete — SOP-01 patient intake, SOP-02 CURES check, SOP-03 crisis protocol delivered
+Last activity: 2026-03-01 -- Phase 3 Plan 02 executed (SOP-03 crisis protocol with three-tier escalation, CANRA quick-reference, safety plan template)
 
-Progress: [##########-] ~33% (Phase 1 complete + Phase 2 Plans 1-2 complete)
+Progress: [###########] ~87% (Phase 3 Plan 02 of 03 complete)
 
 ## Performance Metrics
 
@@ -42,10 +42,11 @@ Progress: [##########-] ~33% (Phase 1 complete + Phase 2 Plans 1-2 complete)
 |-------|-------|-------|----------|
 | 01-compliance-audit-verification | 3 | ~18 min | ~6 min |
 | 02-credential-vault-monitoring | 2 (so far) | 11 min | ~5.5 min |
+| 03-clinical-business-operations | 2 (so far) | ~9 min | ~4.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01, 01-02, 01-03, 02-01, 02-02
-- Trend: Consistent (~5-6 min/plan)
+- Last 5 plans: 01-01, 01-02, 01-03, 02-01, 02-02, 03-01, 03-02
+- Trend: Consistent (~3-6 min/plan)
 
 *Updated after each plan completion*
 
@@ -78,6 +79,9 @@ Recent decisions affecting current work:
 - Alert architecture is spec-only in Phase 2 — n8n workflows and Google Calendar integration built in Phase 4/5
 - Payer re-credentialing alert window is 180 days (vs 90 for credentials) because re-cred requires 90-day advance submission to payers
 - NULL CAQH expiry_date is a pre-launch blocker for Phase 5 — Valentina must verify last attestation date in CAQH portal before alerts can be enabled
+- Three-tier crisis model: Tier 1 (passive ideation), Tier 2 (plan OR intent), Tier 3 (plan AND intent AND means / in-progress) — C-SSRS is standard instrument, 988 is primary statewide crisis resource
+- Parent notification is mandatory for all Tier 1+ crisis events involving minors (different timing per tier)
+- Peer consultation agreement is a pre-launch action: identify 1-2 board-certified psychiatrists; store in 1Password Clinical Operations category; update SOP-03 Section 8 with contact info
 
 ### Pending Todos
 
@@ -102,6 +106,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-02-27
-Stopped at: Completed 02-02-PLAN.md (Phase 2 Plan 2 — payer tracker seed, credential inventory, alert architecture)
-Resume file: .planning/phases/02-credential-vault-monitoring/02-03-PLAN.md (if exists, otherwise Phase 3)
+Last session: 2026-03-01
+Stopped at: Completed 03-02-PLAN.md (Phase 3 Plan 2 — SOP-03 crisis protocol with three-tier escalation, CANRA quick-reference, safety plan template)
+Resume file: .planning/phases/03-clinical-business-operations/03-03-PLAN.md (SOP-04 business structure + SOP-05 biller onboarding)

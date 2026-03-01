@@ -31,7 +31,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [ ] **OPS-01**: Patient intake workflow documented (screening → eligibility check → scheduling → consent → intake forms → first session)
 - [ ] **OPS-02**: CURES database check SOP for controlled substance prescribing (required before every Rx in CA)
-- [ ] **OPS-03**: Crisis protocol for telehealth sessions (what happens when patient is in crisis, emergency contacts, 988 referral, documentation)
+- [x] **OPS-03**: Crisis protocol for telehealth sessions (what happens when patient is in crisis, emergency contacts, 988 referral, documentation)
 - [ ] **OPS-04**: Business structure documentation (current Valentina Park MD, PC S-Corp structure, roles, Maxi as CTO, future Brighter Days entity plan)
 - [ ] **OPS-05**: Third-party biller onboarding and oversight process (what data they need, how they access Tebra, reporting expectations)
 
@@ -110,7 +110,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CRED-04 | Phase 2 | Complete (02-02) |
 | OPS-01 | Phase 3 | Pending |
 | OPS-02 | Phase 3 | Pending |
-| OPS-03 | Phase 3 | Pending |
+| OPS-03 | Phase 3 | Complete |
 | OPS-04 | Phase 3 | Pending |
 | OPS-05 | Phase 3 | Pending |
 | DASH-01 | Phase 4 | Pending |
