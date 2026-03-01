@@ -1509,3 +1509,478 @@ for item in calendar_items:
 ```
 
 "Next due: 14d" shows the days remaining for the soonest non-overdue item. Updates on each refresh. Clicking `[SND]` opens the audio settings overlay (Section 7.8).
+
+---
+
+## Section 8: Tebra Data Integration (DASH-05) and Billing Oversight Panel (DASH-06)
+
+### 8.1 Overview
+
+Tebra is the existing EHR and billing platform for Brighter Days. The dashboard does not replace Tebra — it provides oversight. This section covers: how appointment and billing data flows from Tebra into Supabase (8A), how the appointments panel displays that data (8B), and how the billing oversight panel renders aggregate billing metrics (8C).
+
+**PHI scope (consistent with Section 4 and locked decisions):** The dashboard displays ONLY:
+- Patient first name + appointment time (appointments panel)
+- Aggregate billing metrics — claim counts, denial rates, AR totals (billing panel)
+
+No last names, no diagnoses, no CPT codes, no insurance IDs, no patient-level billing detail are ever written to Supabase or displayed on the dashboard.
+
+---
+
+### 8A: Tebra Integration Architecture (DASH-05)
+
+#### 8A.1 Three-Tier Fallback Strategy
+
+The Tebra integration uses a tiered approach because Tebra API access (Tier 1) has LOW confidence from research — actual capabilities need validation during implementation. Whichever tier is implemented, the downstream Supabase schema and TD panel behavior are identical. The developer can implement any tier independently.
+
+**Tier indicator:** A small badge in the header of Panel 5 (Appointments) and Panel 6 (Billing) shows which tier is active:
+- `[API]` — Tier 1 (SOAP API)
+- `[CSV]` — Tier 2 (CSV export)
+- `[MANUAL]` — Tier 3 (manual entry)
+
+This badge is driven by `dashboard_settings.tebra_integration_tier` value (`'api'` / `'csv'` / `'manual'`).
+
+---
+
+#### 8A.2 Tier 1 — Tebra SOAP API (Preferred)
+
+**Overview:** n8n polls the Tebra SOAP API every 15–30 minutes (configurable), extracts appointment and billing data, strips PHI, and writes aggregated results to Supabase. TouchDesigner reads from Supabase only — it never calls the Tebra API directly.
+
+**n8n workflow: Appointments sync**
+
+1. **Schedule Trigger:** Fires every 15 minutes (configurable via n8n workflow settings). Cron: `*/15 * * * *`
+
+2. **HTTP Request node — GetAppointments:**
+   ```xml
+   <!-- SOAP envelope for GetAppointments -->
+   <soapenv:Envelope
+     xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+     xmlns:int="http://www.kareo.com/api/schemas/">
+     <soapenv:Header/>
+     <soapenv:Body>
+       <int:GetAppointments>
+         <int:request>
+           <int:RequestHeader>
+             <int:UserName>{{ $credentials.tebraUsername }}</int:UserName>
+             <int:Password>{{ $credentials.tebraPassword }}</int:Password>
+             <int:CustomerKey>{{ $credentials.tebraCustomerKey }}</int:CustomerKey>
+           </int:RequestHeader>
+           <int:Filter>
+             <int:StartDate>{{ $now.format('YYYY-MM-DD') }}</int:StartDate>
+             <int:EndDate>{{ $now.format('YYYY-MM-DD') }}</int:EndDate>
+           </int:Filter>
+         </int:GetAppointments>
+       </int:request>
+     </soapenv:Body>
+   </soapenv:Envelope>
+   ```
+   - n8n HTTP Request node: Method=POST, URL=`https://webservice.kareo.com/services/soap/2.1/KareoServices.svc`
+   - Header: `Content-Type: text/xml; charset=utf-8`, `SOAPAction: "GetAppointments"`
+   - Authentication: Credentials stored in n8n encrypted credential vault (type: Generic Credential, fields: UserName, Password, CustomerKey)
+
+3. **Code node — Parse and strip PHI:**
+   ```javascript
+   // n8n Code node (JavaScript mode)
+   const parser = require('fast-xml-parser');
+   const responseXml = $input.first().json.data;  // raw SOAP XML
+   const parsed = parser.parse(responseXml);
+
+   // Navigate to appointment list (path varies by Tebra API version — verify during implementation)
+   const appointments = parsed?.Envelope?.Body?.GetAppointmentsResponse?.GetAppointmentsResult?.Appointments?.Appointment || [];
+   const apptArray = Array.isArray(appointments) ? appointments : [appointments];
+
+   return apptArray.map(appt => ({
+     appointment_id: appt.ID,
+     patient_first_name: appt.PatientFirstName,  // ONLY first name — never write LastName
+     appointment_time: appt.StartDateTime,         // ISO datetime
+     appointment_type: appt.PracticeAppointmentTypeName,
+     appointment_date: appt.StartDateTime.split('T')[0],
+     // NEVER include: LastName, DOB, InsuranceID, CPT codes, DiagnosisCode, Notes
+   }));
+   ```
+
+4. **Supabase upsert node:** Upserts each appointment row into `tebra_appointments` by `appointment_id`. Existing rows updated, new rows inserted.
+
+5. **Set `tebra_integration_tier`:** After successful sync, n8n PATCH `dashboard_settings` row `tebra_integration_tier = 'api'` and `tebra_last_sync = NOW()`.
+
+**n8n workflow: Billing sync (GetTransactions)**
+
+1. **Schedule Trigger:** Fires every 30 minutes (billing data changes less frequently than appointments). Cron: `*/30 * * * *`
+
+2. **HTTP Request node — GetTransactions:**
+   ```xml
+   <int:GetTransactions>
+     <int:request>
+       <int:RequestHeader>
+         <int:UserName>{{ $credentials.tebraUsername }}</int:UserName>
+         <int:Password>{{ $credentials.tebraPassword }}</int:Password>
+         <int:CustomerKey>{{ $credentials.tebraCustomerKey }}</int:CustomerKey>
+       </int:RequestHeader>
+       <int:Filter>
+         <int:FromDate>{{ $now.minus({days: 30}).format('YYYY-MM-DD') }}</int:FromDate>
+         <int:ToDate>{{ $now.format('YYYY-MM-DD') }}</int:ToDate>
+         <int:TransactionType>Charge</int:TransactionType>
+       </int:Filter>
+     </int:GetTransactions>
+   ```
+
+3. **Code node — Aggregate billing metrics (PHI stripping + aggregation):**
+   ```javascript
+   const transactions = // ... parse SOAP XML ...
+
+   const today = new Date();
+   let claims_submitted = 0, claims_denied = 0;
+   let ar_current = 0, ar_30 = 0, ar_60 = 0, ar_90plus = 0;
+
+   for (const tx of transactions) {
+     claims_submitted++;
+     const age = Math.floor((today - new Date(tx.ServiceDate)) / 86400000);  // days
+     const balance = parseFloat(tx.Balance || 0);
+
+     if (tx.DenialCode) claims_denied++;
+
+     // AR aging buckets (by balance age)
+     if (age < 30)         ar_current += balance;
+     else if (age < 60)    ar_30 += balance;
+     else if (age < 90)    ar_60 += balance;
+     else                  ar_90plus += balance;
+
+     // NEVER include: PatientID, PatientName, DOB, InsuranceID, CPT, DiagnosisCode
+   }
+
+   const denial_rate = claims_submitted > 0 ? (claims_denied / claims_submitted * 100).toFixed(1) : 0;
+
+   return [{
+     period: today.toISOString().split('T')[0].substring(0, 7),  // "YYYY-MM"
+     claims_submitted, claims_denied, denial_rate: parseFloat(denial_rate),
+     ar_current, ar_30, ar_60, ar_90plus,
+     total_ar: ar_current + ar_30 + ar_60 + ar_90plus,
+     synced_at: new Date().toISOString(),
+     sync_method: 'api'
+   }];
+   ```
+
+4. **Supabase upsert node:** Upserts into `tebra_billing_summary` by `period` (YYYY-MM). One row per month.
+
+**HIPAA compliance options for n8n (developer chooses based on risk tolerance):**
+
+| Option | Description | HIPAA posture |
+|--------|-------------|---------------|
+| **A — Stateless passthrough** | Set `EXECUTIONS_DATA_SAVE_ON_SUCCESS=false` in n8n environment. PHI passes through n8n memory only, never persisted to disk. | Acceptable if n8n is self-hosted in a secure environment. Document in risk assessment. |
+| **B — Keragon** | Use Keragon (HIPAA-native automation platform) instead of n8n. Keragon offers BAA and HIPAA-certified infrastructure. | Preferred if BAA documentation is required for audit. Additional cost. |
+
+The spec recommends Option A for initial implementation (PHI is first-name only — minimal PHI surface), with upgrade path to Keragon if auditors require BAA coverage for the automation layer.
+
+**Tebra setup steps:**
+1. Log into Tebra portal → Help → Get Customer Key (or Settings → API Keys)
+2. Create a dedicated API user with read-only role (minimum necessary access)
+3. Store CustomerKey, Username, Password in n8n credential vault (Credential Type: Generic — do NOT store in n8n environment variables)
+4. Test with a single GetAppointments call for today's date — verify response includes appointments and that patient first names are extractable
+5. Confirm SOAP endpoint URL: `https://webservice.kareo.com/services/soap/2.1/KareoServices.svc` (verify with Tebra support if endpoint changes)
+
+---
+
+#### 8A.3 Tier 2 — Tebra CSV Export (Fallback)
+
+**Use when:** Tebra API access is not feasible (cost, permissions, technical blockers). Valentina or Maxi manually exports reports from Tebra on a schedule, drops them in a monitored folder.
+
+**Manual export steps from Tebra:**
+- **Appointments report:** Tebra → Reports → Appointments → Daily Schedule → Export to CSV. Filter: today's date. Include columns: Patient First Name, Appointment Date, Start Time, Appointment Type. Export frequency: daily (morning).
+- **Billing report:** Tebra → Reports → Billing → Accounts Receivable → Export to CSV. Filter: last 30 days. Include columns: Service Date, Charge Amount, Payment Amount, Denial Code, Balance. Export frequency: weekly.
+
+**n8n workflow: CSV watch + import**
+
+1. **Trigger (choose one):**
+   - **Google Drive File Trigger:** Monitor a specific shared folder (e.g., `Brighter Days / Dashboard Exports /`). Trigger fires when a new file is created matching `*appointments*.csv` or `*billing*.csv`
+   - **Schedule Trigger + Drive Read:** Check folder for new files every 30 minutes using Google Drive List Files node
+
+2. **Google Drive Download node:** Download the CSV file bytes.
+
+3. **Code node — Parse CSV + PHI strip (same rules as Tier 1):**
+   ```javascript
+   // Appointments CSV:
+   const rows = $input.first().json.data.split('\n').map(r => r.split(','));
+   const headers = rows[0];
+   return rows.slice(1).filter(r => r.length > 1).map(row => ({
+     patient_first_name: row[headers.indexOf('Patient First Name')].trim(),
+     appointment_time: row[headers.indexOf('Start Time')].trim(),
+     appointment_date: row[headers.indexOf('Appointment Date')].trim(),
+     appointment_type: row[headers.indexOf('Appointment Type')].trim(),
+     appointment_id: `CSV_${row[headers.indexOf('Appointment Date')]}_${row[headers.indexOf('Start Time')]}`,  // synthetic ID
+     // NEVER include LastName, DOB, Insurance columns
+   }));
+   ```
+
+4. **Supabase upsert:** Identical to Tier 1 — upserts into same `tebra_appointments` and `tebra_billing_summary` tables. Downstream behavior is identical.
+
+5. **Mark sync method:** PATCH `dashboard_settings.tebra_integration_tier = 'csv'` and `tebra_last_sync = NOW()`.
+
+6. **Archive processed file:** Move CSV from `/Dashboard Exports/` to `/Dashboard Exports/Processed/` (Google Drive Move node) to prevent re-import on next cycle.
+
+**Shared folder setup:**
+- Create Google Drive folder: `Brighter Days > Dashboard Exports` — shared with both Valentina's and Maxi's Google accounts
+- Both Valentina and Maxi can drop exports here; n8n picks them up automatically
+- Files older than 7 days in `Processed/` can be deleted automatically (optional n8n cleanup step)
+
+---
+
+#### 8A.4 Tier 3 — Manual Data Entry (Last Resort)
+
+**Use when:** Neither API nor CSV export is feasible (rare — this is truly a last resort).
+
+Panel 5 (Appointments) and Panel 6 (Billing) switch to editable input mode, controlled by `tebra_integration_tier = 'manual'` in `dashboard_settings`.
+
+**Appointments entry form (Panel 5 in manual mode):**
+```
++================================================+
+|  TODAY'S APPOINTMENTS        [MANUAL] [SAVE]  |
+|  ─────────────────────────────────────────── |
+|  Patient First Name:  [_________________]    |
+|  Appointment Time:    [HH:MM] [AM] / [PM]    |
+|                       [+ ADD APPOINTMENT]    |
+|                                              |
+|  Entered:                                   |
+|    Alex      —  9:00 AM                     |
+|    Jordan    —  11:30 AM     [DEL]          |
+|    Casey     —  2:00 PM      [DEL]          |
++================================================+
+```
+
+- Each field is a Text COMP (touchscreen keyboard input) or Button COMPs for time picker
+- `[+ ADD APPOINTMENT]` writes to `tebra_appointments` with `sync_method = 'manual'`
+- `synced_at` field displays "Manual entry — [timestamp]" in the panel footer
+- `[DEL]` removes a manually-entered appointment (DELETE to Supabase by `appointment_id`)
+
+**Billing metrics entry form (Panel 6 in manual mode):**
+```
++================================================+
+|  BILLING OVERSIGHT           [MANUAL] [SAVE]  |
+|  ─────────────────────────────────────────── |
+|  Claims Submitted:  [____]                   |
+|  Claims Denied:     [____]                   |
+|  AR Current (<30d): $[_________]             |
+|  AR 30-60d:         $[_________]             |
+|  AR 60-90d:         $[_________]             |
+|  AR 90+d:           $[_________]             |
++================================================+
+```
+
+- Maxi enters weekly totals manually (typically from Tebra reports reviewed via email or browser)
+- `[SAVE]` writes a single row to `tebra_billing_summary` for current month, `sync_method = 'manual'`
+- Partial entry is allowed — empty fields saved as 0, not NULL, to distinguish from missing data
+
+---
+
+### 8B: Panel 5 — Appointments Display (DASH-05 Visualization)
+
+#### 8B.1 Container COMP
+
+`panel_appointments` — positioned bottom-center in the dashboard grid (see Section 2.3 layout coordinates). Dimensions: 480 × 240 px at 2560×1440 (960 × 480 at 3840×2160).
+
+#### 8B.2 Data Source
+
+`dat_appointments` Web Client DAT polls Supabase:
+```
+GET /rest/v1/tebra_appointments
+  ?select=patient_first_name,appointment_time,appointment_type
+  &appointment_date=eq.{TODAY_DATE}
+  &order=appointment_time.asc
+```
+
+Today's date is computed in Python: `datetime.date.today().isoformat()`. If today is Saturday or Sunday, query uses next Monday's date (configurable: `dashboard_settings.show_next_business_day_on_weekends = 'true'`).
+
+#### 8B.3 Display Format (Read-Only Mode — Tiers 1 & 2)
+
+Chronological list of today's appointments with first name and time only:
+
+```
++================================================+
+|  TODAY'S APPOINTMENTS              [API] 9:42 |
+|  ─────────────────────────────────────────── |
+|                                               |
+|  9:00 AM   Alex        —  Initial Intake      |
+|  11:30 AM  Jordan      —  Follow-Up           |
+|  2:00 PM   Casey       —  Follow-Up           |
+|  3:30 PM   Riley       —  Initial Intake      |
+|                                               |
+|  4 appointments today                         |
++================================================+
+```
+
+- Format per row: `{HH:MM AM/PM}  {FirstName}  —  {appointment_type}` (or omit type if column missing)
+- Last refresh time shown in header: `9:42` (HH:MM in panel's local timezone)
+- Tier badge (`[API]`, `[CSV]`, or `[MANUAL]`) in header — driven by `tebra_integration_tier`
+
+**PHI scope reminder (spec note for developer):** `patient_first_name` only. The `tebra_appointments` table must never contain `patient_last_name`, `patient_dob`, `insurance_id`, `diagnosis_code`, or any clinical notes. PHI stripping happens in n8n (Tiers 1–2) before writing to Supabase. The Supabase schema enforces this by not having those columns.
+
+#### 8B.4 Empty State
+
+When no appointments found for today:
+```
+|  No appointments scheduled today              |
+|  (or appointment sync not yet completed)      |
+```
+
+Displayed in dim CYAN (consistent with empty states across other panels).
+
+#### 8B.5 Refresh
+
+Inherits the global polling cycle (Timer CHOP onCycle, default 15-min interval). A `[REFRESH]` button in the panel header triggers immediate `dat_appointments` pulse.
+
+#### 8B.6 Animation States
+
+| State | Trigger | Animation |
+|-------|---------|-----------|
+| IDLE | Appointments loaded, none starting soon | Border: sine wave 0.2Hz, subtle CYAN |
+| UPCOMING | Next appointment < 15 minutes away | Border: square wave 0.5Hz, GREEN |
+| LOADING | Fetching data | Spinner `|/-\` in header |
+| MANUAL | `tebra_integration_tier = 'manual'` | Input fields visible, read-only list hidden |
+
+---
+
+### 8C: Panel 6 — Billing Oversight (DASH-06)
+
+#### 8C.1 Purpose
+
+Monitor third-party biller activity — oversight, not direct billing. Dr. Park does not process claims directly; the dashboard shows whether the biller is performing effectively. The billing panel answers: "How many claims were submitted? How many denied? How much money is sitting uncollected and for how long?"
+
+#### 8C.2 Container COMP
+
+`panel_billing` — positioned bottom-right in the main area (see Section 2.3 layout coordinates). Dimensions: 480 × 240 px at 2560×1440 (960 × 480 at 3840×2160).
+
+#### 8C.3 Data Source
+
+`dat_billing` Web Client DAT polls Supabase:
+```
+GET /rest/v1/tebra_billing_summary
+  ?select=*
+  &order=period.desc
+  &limit=2
+```
+
+Returns current month and previous month rows. Python computes month-over-month deltas.
+
+#### 8C.4 Display Layout
+
+```
++================================================+
+|  BILLING OVERSIGHT                 [CSV] 9:42 |
+|  ─────────────────────────────────────────── |
+|                                               |
+|  Claims Submitted:   47   (+3 vs last month)  |
+|  Claims Denied:       4   (8.5%)  [AMBER]     |
+|                                               |
+|  AR Aging:                                    |
+|  Current  [###########.....] $12,400          |
+|  30-60d   [######..........] $6,800           |
+|  60-90d   [###.............] $3,100           |
+|  90+d     [#...............] $900   [RED]     |
+|                                               |
+|  Total AR:  $23,200   Last sync: 3h ago       |
++================================================+
+```
+
+**Claims row:**
+- `claims_submitted` count for current month period
+- Delta from previous month: `(+N vs last month)` or `(-N vs last month)` in dim text
+- `claims_denied` count + denial rate percentage `(X.X%)`
+- Denial rate color coding: < 5% = normal (dim text), 5–10% = AMBER, > 10% = RED
+
+**AR aging bar chart:** ASCII progress bars using `#` and `.` characters, 16 characters wide. Bar width is proportional to the bucket's share of total AR:
+```python
+def ar_bar(amount, total_ar, width=16):
+    if total_ar == 0 or amount == 0:
+        return '.' * width
+    filled = round((amount / total_ar) * width)
+    return '#' * filled + '.' * (width - filled)
+```
+
+- AR 90+d > $0: always displayed in RED (per spec — no exceptions, any uncollected 90+d AR is a risk signal)
+- AR 90+d = $0: displayed in GREEN
+
+**Last sync display:** `Last sync: {N}h ago` — computed from `tebra_billing_summary.synced_at` vs. current time. If `sync_method = 'manual'`, displays `Manual entry — {date}` instead.
+
+#### 8C.5 Month-over-Month Delta Calculation
+
+```python
+# dat_billing returns 2 rows: [0] = current month, [1] = previous month
+def compute_billing_display(current, previous):
+    delta_submitted = current['claims_submitted'] - previous.get('claims_submitted', 0)
+    delta_sign = '+' if delta_submitted >= 0 else ''
+    delta_str = f"({delta_sign}{delta_submitted} vs last month)"
+
+    denial_rate = current['denial_rate']
+    if denial_rate > 10.0:
+        denial_color = 'RED'
+    elif denial_rate > 5.0:
+        denial_color = 'AMBER'
+    else:
+        denial_color = 'NORMAL'
+
+    ar_90plus_color = 'RED' if current['ar_90plus'] > 0 else 'GREEN'
+
+    return {
+        'claims_submitted': current['claims_submitted'],
+        'delta_str': delta_str,
+        'claims_denied': current['claims_denied'],
+        'denial_rate': f"{denial_rate:.1f}%",
+        'denial_color': denial_color,
+        'ar_current': current['ar_current'],
+        'ar_30': current['ar_30'],
+        'ar_60': current['ar_60'],
+        'ar_90plus': current['ar_90plus'],
+        'total_ar': current['total_ar'],
+        'ar_90plus_color': ar_90plus_color,
+    }
+```
+
+#### 8C.6 Tier 3 Mode (Manual Entry)
+
+When `tebra_integration_tier = 'manual'`, the panel replaces the read-only display with the editable form described in Section 8A.4. A `[SWITCH TO MANUAL]` button appears in the panel header at all times, allowing Maxi to override to manual mode even when API or CSV sync is configured (useful during sync failures).
+
+#### 8C.7 HIPAA Note
+
+The billing panel displays only aggregate metrics. No patient names, no individual claim details, no CPT codes, no insurance member IDs appear anywhere on this panel or in the underlying `tebra_billing_summary` table. All aggregation occurs in n8n (Tier 1/2) before writing to Supabase.
+
+A printed copy or screenshot of the billing panel is not PHI. However, the physical monitor displaying the panel must still follow the physical security guidelines in Section 4.14, since the appointments panel (showing first names) may be visible at the same time.
+
+#### 8C.8 Animation States
+
+| State | Trigger | Animation |
+|-------|---------|-----------|
+| IDLE | Normal billing activity | Border: sine wave 0.2Hz, subtle CYAN |
+| WARNING | Denial rate 5–10% OR AR 90+d > $0 | Border: square wave 0.5Hz, AMBER |
+| ALERT | Denial rate > 10% | Border: square wave 2Hz, RED |
+| STALE | `synced_at` older than 2x polling interval | Border dim, `[STALE DATA]` indicator in header |
+| MANUAL | `tebra_integration_tier = 'manual'` | Input form visible |
+
+#### 8C.9 Supabase Table DDL Reference
+
+The `tebra_appointments` and `tebra_billing_summary` tables are defined with complete DDL in Section 9 (Plan 03). The columns required by this section are:
+
+**`tebra_appointments` required columns:**
+| Column | Type | Notes |
+|--------|------|-------|
+| `appointment_id` | text | Primary key. SOAP API: native ID. CSV: synthetic `CSV_{date}_{time}`. Manual: `MANUAL_{uuid}` |
+| `patient_first_name` | text | ONLY first name — never last name |
+| `appointment_time` | timestamptz | Full ISO datetime with timezone |
+| `appointment_date` | date | Extracted date (for WHERE filter) |
+| `appointment_type` | text | "Initial Intake", "Follow-Up", etc. |
+| `sync_method` | text | `'api'` / `'csv'` / `'manual'` |
+| `synced_at` | timestamptz | When this row was written to Supabase |
+
+**`tebra_billing_summary` required columns:**
+| Column | Type | Notes |
+|--------|------|-------|
+| `period` | text | Primary key. Format: `YYYY-MM` (e.g., `2026-03`) |
+| `claims_submitted` | integer | Count of claims submitted this month |
+| `claims_denied` | integer | Count of denied claims |
+| `denial_rate` | numeric(5,2) | Percentage, pre-computed by n8n |
+| `ar_current` | numeric(10,2) | AR balance aged < 30 days |
+| `ar_30` | numeric(10,2) | AR balance aged 30–59 days |
+| `ar_60` | numeric(10,2) | AR balance aged 60–89 days |
+| `ar_90plus` | numeric(10,2) | AR balance aged 90+ days |
+| `total_ar` | numeric(10,2) | Sum of all AR buckets |
+| `sync_method` | text | `'api'` / `'csv'` / `'manual'` |
+| `synced_at` | timestamptz | When this row was written/updated |
+
+Full DDL (CREATE TABLE statements) for both tables is in Section 9 (Plan 03).
