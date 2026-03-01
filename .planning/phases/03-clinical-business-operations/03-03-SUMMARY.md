@@ -109,6 +109,15 @@ None — no external service configuration required by this plan.
   - Consumer Gmail BAA gap — must migrate to Google Workspace by 2026-03-15
   - DEA address mismatch (Walnut Creek vs. Torrance) — must update per 21 CFR 1301.51
 
+## Self-Check: PASSED
+
+- FOUND: sop-04-business-structure.md
+- FOUND: sop-05-biller-onboarding.md
+- FOUND: 03-03-SUMMARY.md
+- FOUND: commit dc7611f (SOP-04)
+- FOUND: commit ce0e56e (SOP-05)
+- FOUND: commit 9027420 (metadata/docs)
+
 ---
 *Phase: 03-clinical-business-operations*
 *Completed: 2026-03-01*
