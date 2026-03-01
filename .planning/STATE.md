@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: complete
-last_updated: "2026-03-01T09:39:17Z"
+status: unknown
+last_updated: "2026-03-01T09:41:01.613Z"
 progress:
-  total_phases: 3
+  total_phases: 4
   completed_phases: 3
   total_plans: 8
   completed_plans: 8
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-25)
 
 **Core value:** Valentina can confidently see her first telehealth patient knowing every compliance, billing, and operational requirement is met -- and has a single system to manage it all going forward.
-**Current focus:** Phase 3: Clinical & Business Operations
+**Current focus:** Phase 3 COMPLETE — Ready for Phase 4 (Dashboard Spec)
 
 ## Current Position
 
-Phase: 3 of 3 (Clinical & Business Operations) — IN PROGRESS
-Plan: 2 of 3 complete in Phase 3 (7 of ~8 total plans across all phases)
-Status: Phases 1-2 complete; Phase 3 Plans 1-2 complete — SOP-01 patient intake, SOP-02 CURES check, SOP-03 crisis protocol delivered
-Last activity: 2026-03-01 -- Phase 3 Plan 02 executed (SOP-03 crisis protocol with three-tier escalation, CANRA quick-reference, safety plan template)
+Phase: 3 of 3 (Clinical & Business Operations) — COMPLETE
+Plan: 3 of 3 complete in Phase 3 (8 of 8 total plans across all phases)
+Status: All three phases complete — Phase 1 compliance audit, Phase 2 credential vault, Phase 3 operations SOPs (OPS-01 through OPS-05) all delivered
+Last activity: 2026-03-01 -- Phase 3 Plan 03 executed (SOP-04 business structure + SOP-05 biller onboarding)
 
-Progress: [###########] ~87% (Phase 3 Plan 02 of 03 complete)
+Progress: [############] 100% (All 8 plans across 3 phases complete)
 
 ## Performance Metrics
 
@@ -42,10 +42,10 @@ Progress: [###########] ~87% (Phase 3 Plan 02 of 03 complete)
 |-------|-------|-------|----------|
 | 01-compliance-audit-verification | 3 | ~18 min | ~6 min |
 | 02-credential-vault-monitoring | 2 (so far) | 11 min | ~5.5 min |
-| 03-clinical-business-operations | 2 (so far) | ~9 min | ~4.5 min |
+| 03-clinical-business-operations | 3 | ~12 min | ~4 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01, 01-02, 01-03, 02-01, 02-02, 03-01, 03-02
+- Last 5 plans: 02-01, 02-02, 03-01, 03-02, 03-03
 - Trend: Consistent (~3-6 min/plan)
 
 *Updated after each plan completion*
@@ -82,6 +82,13 @@ Recent decisions affecting current work:
 - Three-tier crisis model: Tier 1 (passive ideation), Tier 2 (plan OR intent), Tier 3 (plan AND intent AND means / in-progress) — C-SSRS is standard instrument, 988 is primary statewide crisis resource
 - Parent notification is mandatory for all Tier 1+ crisis events involving minors (different timing per tier)
 - Peer consultation agreement is a pre-launch action: identify 1-2 board-certified psychiatrists; store in 1Password Clinical Operations category; update SOP-03 Section 8 with contact info
+- Tebra Biller role (not Billing Manager or System Admin) is the only acceptable access level for any third-party biller per HIPAA minimum necessary — accommodate task-specific needs without upgrading the role
+- Brighter Days entity decision (rename existing Valentina Park MD PC vs. create new S-Corp) deferred pending attorney/CPA guidance and hiring timeline
+- SOP-04 uses reference document format (not procedural) because business structure is factual, not operational
+- [Phase 03]: Emergency contact form requires patient full physical address, county of residence, and nearest ED for 911 dispatch from telehealth crisis sessions
+- [Phase 03]: CURES previous business day interpretation: Friday check satisfies Monday prescribing requirement
+- [Phase 03]: CA H&S Code 11162.1 requires EPCS (electronic prescribing for controlled substances) for Schedule II as of 2025-01-01
+- [Phase 03]: CA W&I Code 5850.1 allows 12+ minors to consent to outpatient mental health services independently if sufficiently mature
 
 ### Pending Todos
 
@@ -107,5 +114,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 03-02-PLAN.md (Phase 3 Plan 2 — SOP-03 crisis protocol with three-tier escalation, CANRA quick-reference, safety plan template)
-Resume file: .planning/phases/03-clinical-business-operations/03-03-PLAN.md (SOP-04 business structure + SOP-05 biller onboarding)
+Stopped at: Completed 03-03-PLAN.md (Phase 3 Plan 3 — SOP-04 business structure + SOP-05 biller onboarding) — ALL PHASES COMPLETE
+Resume file: Phase 4 planning (Dashboard Spec) — begin with /gsd:plan-phase or /gsd:progress
