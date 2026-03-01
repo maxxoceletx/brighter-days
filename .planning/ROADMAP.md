@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Compliance Audit & Verification** - Verify every legal, regulatory, and insurance obligation for operating a CA telehealth psychiatry practice
 - [x] **Phase 2: Credential Vault & Monitoring** - Organize all practice credentials into a single system with expiry tracking and alerts
 - [x] **Phase 3: Clinical & Business Operations** - Document every SOP, workflow, and procedure needed to run the practice (completed 2026-03-01)
-- [ ] **Phase 4: Dashboard Command Center Specification** - Produce a complete spec for the TouchDesigner-based practice command center (spec for handoff, not built by GSD)
+- [x] **Phase 4: Dashboard Command Center Specification** - Produce a complete spec for the TouchDesigner-based practice command center (spec for handoff, not built by GSD)
 - [ ] **Phase 5: AI Automation Specification** - Produce a complete spec for AI-powered form filling and compliance monitoring (spec for handoff, not built by GSD)
 
 ## Phase Details
@@ -86,8 +86,8 @@ Plans:
 
 Plans:
 - [x] 04-01-PLAN.md -- Architecture foundation: TD network hierarchy, Supabase schema, ASCII aesthetic rules, Today panel (DASH-01), Compliance Status panel (DASH-02)
-- [ ] 04-02-PLAN.md -- Data display panels: Obligations Checklist (DASH-03), Compliance Calendar (DASH-04), Tebra Integration (DASH-05), Billing Oversight (DASH-06)
-- [ ] 04-03-PLAN.md -- Action panels: Action Buttons (DASH-07), Automation Tracker (DASH-08), Developer Guide and Pre-Launch Checklist
+- [x] 04-02-PLAN.md -- Data display panels: Obligations Checklist (DASH-03), Compliance Calendar (DASH-04), Tebra Integration (DASH-05), Billing Oversight (DASH-06)
+- [x] 04-03-PLAN.md -- Action panels: Action Buttons (DASH-07), Automation Tracker (DASH-08), Developer Guide and Pre-Launch Checklist
 
 ### Phase 5: AI Automation Specification
 **Goal**: A complete specification exists for AI-powered form filling and compliance monitoring that defines exactly what the AI does, what data it needs, and how humans stay in the loop
@@ -116,5 +116,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | 1. Compliance Audit & Verification | 3/3 | Complete | 2026-02-27 |
 | 2. Credential Vault & Monitoring | 2/2 | Complete | 2026-02-27 |
 | 3. Clinical & Business Operations | 3/3 | Complete   | 2026-03-01 |
-| 4. Dashboard Command Center Specification | 2/3 | In Progress|  |
+| 4. Dashboard Command Center Specification | 3/3 | Complete | 2026-03-01 |
 | 5. AI Automation Specification | 0/1 | Not started | - |

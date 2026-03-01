@@ -43,8 +43,8 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **DASH-04**: Compliance and operations calendar — deadlines, renewals, CAQH attestation windows, filing dates, all in one view
 - [x] **DASH-05**: Tebra API integration pulling appointment and billing data into dashboard (research cost, capabilities, and MCP availability)
 - [x] **DASH-06**: Billing oversight view showing claims submitted, denials, AR aging from Tebra data (for monitoring third-party billers)
-- [ ] **DASH-07**: Functional action buttons — send emails, trigger automations, submit forms directly from dashboard (not just display)
-- [ ] **DASH-08**: Automation process tracker — visual status of running/completed automations (CAQH checks, email sends, form submissions)
+- [x] **DASH-07**: Functional action buttons — send emails, trigger automations, submit forms directly from dashboard (not just display)
+- [x] **DASH-08**: Automation process tracker — visual status of running/completed automations (CAQH checks, email sends, form submissions)
 
 ### AI Automation
 
@@ -119,8 +119,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DASH-04 | Phase 4 | Complete |
 | DASH-05 | Phase 4 | Complete |
 | DASH-06 | Phase 4 | Complete |
-| DASH-07 | Phase 4 | Pending |
-| DASH-08 | Phase 4 | Pending |
+| DASH-07 | Phase 4 | Complete |
+| DASH-08 | Phase 4 | Complete |
 | AI-01 | Phase 5 | Pending |
 | AI-02 | Phase 5 | Pending |
 | AI-03 | Phase 5 | Pending |
