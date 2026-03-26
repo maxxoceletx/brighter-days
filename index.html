@@ -95,7 +95,6 @@
     .org-card-resp { font-size: 11px; color: #666; margin-top: 8px; text-align: left; line-height: 1.4; }
     .org-card .icon-btn { position: absolute; top: 8px; right: 8px; }
     .org-connector { width: 2px; height: 24px; background: #ccc; }
-    .org-connector-label { font-size: 11px; color: #aaa; margin: 2px 0; }
 
     /* Forms */
     .inline-form {
@@ -493,8 +492,8 @@
       const children = getChildren(r.id);
       const respLines = r.responsibilities ? r.responsibilities.split(',').map(s => s.trim()).filter(Boolean) : [];
       return `
-        ${depth > 0 ? '<div class="org-connector"></div><div class="org-connector-label">reports to</div>' : ''}
-        <div class="org-card ${r.role_type === 'owner' ? 'owner' : ''}" style="margin-left:${depth * 40}px;">
+        ${depth > 0 ? '<div class="org-connector"></div>' : ''}
+        <div class="org-card ${r.role_type === 'owner' ? 'owner' : ''}">
           <button class="icon-btn" onclick="editRole(${r.id})" title="Edit">&#9998;</button>
           <div class="org-card-name">${esc(r.name)}</div>
           <div class="org-card-title">${esc(r.title)}</div>
