@@ -274,7 +274,7 @@
   <div class="panel">
     <h2>MSO / Vendor Outreach</h2>
     <p style="font-size:13px;color:#888;margin-bottom:8px;">Tracking responses from practice management and billing vendors. Click a status to toggle.</p>
-    <p style="font-size:12px;margin-bottom:16px;" id="gmailStatus"></p>
+    <p style="font-size:12px;margin-bottom:16px;color:#4caf50;" id="gmailStatus">Replies auto-sync via Google Apps Script</p>
     <table style="width:100%;border-collapse:collapse;font-size:13px;" id="vendorTable">
       <thead>
         <tr style="border-bottom:2px solid #e0e0e0;text-align:left;">
@@ -598,25 +598,8 @@
     if (!error && data) { vendorList = data; renderVendors(); }
   }
 
-  async function checkGmailReplies() {
-    const indicator = document.getElementById('gmailStatus');
-    if (indicator) indicator.textContent = 'Checking Gmail...';
-    try {
-      const res = await fetch('https://ymejmufmaivocbwpadiy.supabase.co/functions/v1/check-vendor-replies', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      const result = await res.json();
-      if (indicator) {
-        if (result.error) { indicator.textContent = 'Gmail check failed'; indicator.style.color = '#e53935'; }
-        else { indicator.textContent = `Checked ${result.checked} vendors, ${result.updated} new replies`; indicator.style.color = '#4caf50'; }
-      }
-      await loadVendors();
-    } catch (e) {
-      if (indicator) { indicator.textContent = 'Gmail check failed'; indicator.style.color = '#e53935'; }
-    }
-    setTimeout(() => { if (indicator) indicator.textContent = ''; }, 5000);
-  }
+  // Gmail replies are pushed via Google Apps Script → Supabase
+  // No API keys stored — one-way push from Gmail to the app
 
   async function toggleVendorStatus(id) {
     const v = vendorList.find(r => r.id === id);
@@ -666,7 +649,7 @@
     }).join('');
   }
 
-  loadVendors().then(() => checkGmailReplies());
+  loadVendors();
   loadData();
 </script>
 
