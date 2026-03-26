@@ -89,10 +89,19 @@
       text-align: center; min-width: 240px; position: relative;
     }
     .org-card.owner { border-color: #1976d2; }
-    .org-card-name { font-size: 15px; font-weight: 600; }
-    .org-card-title { font-size: 12px; color: #888; margin-top: 2px; }
-    .org-card-type { font-size: 10px; color: #fff; background: #1976d2; padding: 1px 8px; border-radius: 8px; display: inline-block; margin-top: 6px; }
-    .org-card-resp { font-size: 11px; color: #666; margin-top: 8px; text-align: left; line-height: 1.4; }
+    .org-card-name input, .org-card-title input, .org-card-resp textarea {
+      border: 1px solid transparent; background: transparent; text-align: center;
+      font-family: inherit; width: 100%; border-radius: 4px; padding: 2px 4px;
+    }
+    .org-card-name input { font-size: 15px; font-weight: 600; }
+    .org-card-title input { font-size: 12px; color: #888; }
+    .org-card-resp textarea { font-size: 11px; color: #666; text-align: left; resize: vertical; min-height: 40px; line-height: 1.4; }
+    .org-card-name input:hover, .org-card-title input:hover, .org-card-resp textarea:hover { border-color: #ddd; }
+    .org-card-name input:focus, .org-card-title input:focus, .org-card-resp textarea:focus { border-color: #1976d2; outline: none; background: #fff; }
+    .org-card-type { font-size: 10px; margin-top: 6px; }
+    .org-card-type select { font-size: 10px; border: 1px solid transparent; border-radius: 8px; padding: 1px 8px; background: #1976d2; color: #fff; cursor: pointer; appearance: none; text-align: center; }
+    .org-card-type select:hover { border-color: #1565c0; }
+    .org-card-type select:focus { outline: none; border-color: #0d47a1; }
     .org-card .icon-btn { position: absolute; top: 8px; right: 8px; }
     .org-connector { width: 2px; height: 24px; background: #ccc; }
 
@@ -490,15 +499,19 @@
 
     function renderCard(r, depth) {
       const children = getChildren(r.id);
-      const respLines = r.responsibilities ? r.responsibilities.split(',').map(s => s.trim()).filter(Boolean) : [];
+      const roleTypes = ['owner','officer','employee','contractor','advisor'];
       return `
         ${depth > 0 ? '<div class="org-connector"></div>' : ''}
         <div class="org-card ${r.role_type === 'owner' ? 'owner' : ''}">
-          <button class="icon-btn" onclick="editRole(${r.id})" title="Edit">&#9998;</button>
-          <div class="org-card-name">${esc(r.name)}</div>
-          <div class="org-card-title">${esc(r.title)}</div>
-          <span class="org-card-type">${esc(r.role_type)}</span>
-          ${respLines.length ? '<div class="org-card-resp">' + respLines.map(l => '• ' + esc(l)).join('<br>') + '</div>' : ''}
+          <button class="icon-btn delete" onclick="deleteRole(${r.id})" title="Delete">&times;</button>
+          <div class="org-card-name"><input value="${esc(r.name)}" onchange="updateRole(${r.id}, 'name', this.value)" placeholder="Name"></div>
+          <div class="org-card-title"><input value="${esc(r.title)}" onchange="updateRole(${r.id}, 'title', this.value)" placeholder="Title"></div>
+          <div class="org-card-type">
+            <select onchange="updateRole(${r.id}, 'role_type', this.value)">
+              ${roleTypes.map(t => `<option value="${t}" ${r.role_type === t ? 'selected' : ''}>${t}</option>`).join('')}
+            </select>
+          </div>
+          <div class="org-card-resp"><textarea onchange="updateRole(${r.id}, 'responsibilities', this.value)" placeholder="Responsibilities (comma-separated)">${esc(r.responsibilities || '')}</textarea></div>
         </div>
         ${children.map(c => renderCard(c, depth + 1)).join('')}
       `;
@@ -533,17 +546,14 @@
     await loadData();
   }
 
-  async function editRole(id) {
-    const r = roles.find(x => x.id === id);
-    const name = prompt('Name:', r.name);
-    if (name === null) return;
-    const title = prompt('Title:', r.title);
-    const resp = prompt('Responsibilities (comma-separated):', r.responsibilities || '');
-    await sb.from('business_roles').update({
-      name: name || r.name,
-      title: title || r.title,
-      responsibilities: resp || null
-    }).eq('id', id);
+  async function updateRole(id, field, value) {
+    await sb.from('business_roles').update({ [field]: value || null }).eq('id', id);
+    if (field === 'role_type') await loadData();
+  }
+
+  async function deleteRole(id) {
+    if (!confirm('Delete this role?')) return;
+    await sb.from('business_roles').delete().eq('id', id);
     await loadData();
   }
 
