@@ -14,136 +14,240 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8f9fa; color: #333; }
 
-    header {
-      background: #fff; border-bottom: 1px solid #e0e0e0; padding: 20px 32px;
-    }
+    header { background: #fff; border-bottom: 1px solid #e0e0e0; padding: 16px 24px; }
     header h1 { font-size: 22px; font-weight: 600; color: #1a1a1a; }
-    header p { font-size: 13px; color: #888; margin-top: 4px; }
+    header p { font-size: 13px; color: #888; margin-top: 2px; }
 
-    .progress-bar-container {
-      margin-top: 12px; background: #e9ecef; border-radius: 8px; height: 8px; overflow: hidden;
+    /* Tabs */
+    .tabs { display: flex; gap: 0; background: #fff; border-bottom: 1px solid #e0e0e0; padding: 0 24px; }
+    .tab {
+      padding: 10px 20px; font-size: 13px; font-weight: 500; color: #888; cursor: pointer;
+      border: none; background: none; border-bottom: 2px solid transparent; transition: all 0.2s;
     }
-    .progress-bar-fill {
-      height: 100%; background: #4caf50; border-radius: 8px; transition: width 0.3s ease;
-    }
+    .tab:hover { color: #333; }
+    .tab.active { color: #1976d2; border-bottom-color: #1976d2; }
+
+    .tab-content { display: none; padding: 24px; max-width: 1000px; }
+    .tab-content.active { display: block; }
+
+    /* Progress bar */
+    .progress-bar-container { margin-top: 8px; background: #e9ecef; border-radius: 8px; height: 8px; overflow: hidden; }
+    .progress-bar-fill { height: 100%; background: #4caf50; border-radius: 8px; transition: width 0.3s ease; }
     .progress-text { font-size: 12px; color: #888; margin-top: 4px; }
 
-    .container { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 24px 32px; max-width: 1200px; align-items: start; }
-
-    .panel {
-      background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px;
-    }
+    /* Panels */
+    .panel { background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; margin-bottom: 16px; }
     .panel h2 { font-size: 16px; font-weight: 600; margin-bottom: 16px; color: #1a1a1a; }
 
     /* Checklist */
-    .step { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
+    .step { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
     .step:last-child { border-bottom: none; }
-    .step input[type="checkbox"] {
-      margin-top: 3px; width: 18px; height: 18px; cursor: pointer; accent-color: #4caf50; flex-shrink: 0;
-    }
-    .step-content { flex: 1; }
+    .step input[type="checkbox"] { margin-top: 3px; width: 18px; height: 18px; cursor: pointer; accent-color: #4caf50; flex-shrink: 0; }
+    .step-content { flex: 1; min-width: 0; }
     .step-title { font-size: 14px; font-weight: 500; }
     .step-title.done { text-decoration: line-through; color: #999; }
     .step-desc { font-size: 12px; color: #888; margin-top: 2px; }
-    .step-number { font-size: 12px; color: #aaa; font-weight: 600; min-width: 20px; margin-top: 2px; }
+    .step-actions { display: flex; gap: 4px; flex-shrink: 0; }
+    .icon-btn { cursor: pointer; color: #ccc; font-size: 14px; border: none; background: none; padding: 2px 4px; }
+    .icon-btn:hover { color: #1976d2; }
+    .icon-btn.delete:hover { color: #e53935; }
+
+    /* Two column layout */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+    @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
 
     /* Document vault */
-    .doc-group { margin-bottom: 16px; }
-    .doc-group-title { font-size: 13px; font-weight: 600; color: #555; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid #f0f0f0; }
-    .doc-item {
-      display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 13px;
-    }
-    .doc-name { flex: 1; }
+    .doc-group { margin-bottom: 12px; }
+    .doc-group-title { font-size: 13px; font-weight: 600; color: #555; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid #f0f0f0; }
+    .doc-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 13px; }
+    .doc-name { flex: 1; min-width: 0; }
     .doc-name a { color: #1976d2; text-decoration: none; }
     .doc-name a:hover { text-decoration: underline; }
-    .doc-status {
-      font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 500; cursor: pointer; border: none;
-    }
+    .doc-status { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 500; cursor: pointer; border: none; }
     .doc-status.needed { background: #fff3e0; color: #e65100; }
     .doc-status.uploaded { background: #e3f2fd; color: #1565c0; }
     .doc-status.filed { background: #e8f5e9; color: #2e7d32; }
-    .doc-notes { font-size: 11px; color: #999; }
-    .doc-delete { cursor: pointer; color: #ccc; font-size: 16px; border: none; background: none; }
-    .doc-delete:hover { color: #e53935; }
 
-    /* Add doc form */
-    .add-doc-btn {
-      font-size: 12px; color: #1976d2; cursor: pointer; border: none; background: none;
-      padding: 4px 0; margin-top: 4px;
+    /* Business info */
+    .info-category { font-size: 13px; font-weight: 600; color: #555; margin: 16px 0 8px; padding-bottom: 4px; border-bottom: 1px solid #f0f0f0; }
+    .info-category:first-child { margin-top: 0; }
+    .info-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 13px; }
+    .info-label { font-weight: 500; color: #555; min-width: 200px; flex-shrink: 0; }
+    .info-value { flex: 1; min-width: 0; }
+    .info-value input {
+      width: 100%; border: 1px solid transparent; border-radius: 4px; padding: 4px 6px;
+      font-size: 13px; font-family: inherit; background: transparent;
     }
-    .add-doc-btn:hover { text-decoration: underline; }
-    .add-doc-form {
+    .info-value input:hover { border-color: #ddd; }
+    .info-value input:focus { border-color: #1976d2; outline: none; background: #fff; }
+    .info-notes { font-size: 11px; color: #999; margin-left: 208px; margin-top: -2px; }
+
+    /* Org chart */
+    .org-chart { display: flex; flex-direction: column; align-items: center; gap: 0; }
+    .org-card {
+      background: #fff; border: 2px solid #e0e0e0; border-radius: 8px; padding: 16px 24px;
+      text-align: center; min-width: 240px; position: relative;
+    }
+    .org-card.owner { border-color: #1976d2; }
+    .org-card-name { font-size: 15px; font-weight: 600; }
+    .org-card-title { font-size: 12px; color: #888; margin-top: 2px; }
+    .org-card-type { font-size: 10px; color: #fff; background: #1976d2; padding: 1px 8px; border-radius: 8px; display: inline-block; margin-top: 6px; }
+    .org-card-resp { font-size: 11px; color: #666; margin-top: 8px; text-align: left; line-height: 1.4; }
+    .org-card .icon-btn { position: absolute; top: 8px; right: 8px; }
+    .org-connector { width: 2px; height: 24px; background: #ccc; }
+    .org-connector-label { font-size: 11px; color: #aaa; margin: 2px 0; }
+
+    /* Forms */
+    .inline-form {
       display: none; background: #fafafa; border: 1px solid #e0e0e0; border-radius: 6px;
       padding: 12px; margin-top: 8px;
     }
-    .add-doc-form.visible { display: block; }
-    .add-doc-form input, .add-doc-form select, .add-doc-form textarea {
+    .inline-form.visible { display: block; }
+    .inline-form input, .inline-form select, .inline-form textarea {
       width: 100%; padding: 6px 8px; border: 1px solid #ddd; border-radius: 4px;
       font-size: 13px; margin-bottom: 8px; font-family: inherit;
     }
-    .add-doc-form textarea { resize: vertical; height: 50px; }
-    .add-doc-form label { font-size: 12px; color: #666; display: block; margin-bottom: 2px; }
+    .inline-form textarea { resize: vertical; height: 50px; }
+    .inline-form label { font-size: 12px; color: #666; display: block; margin-bottom: 2px; }
     .form-actions { display: flex; gap: 8px; }
-    .btn {
-      padding: 6px 14px; border-radius: 4px; border: none; font-size: 12px; cursor: pointer; font-weight: 500;
-    }
+    .btn { padding: 6px 14px; border-radius: 4px; border: none; font-size: 12px; cursor: pointer; font-weight: 500; }
     .btn-primary { background: #1976d2; color: #fff; }
     .btn-primary:hover { background: #1565c0; }
     .btn-secondary { background: #e0e0e0; color: #555; }
     .btn-secondary:hover { background: #d0d0d0; }
+    .btn-danger { background: #ffebee; color: #c62828; }
+    .btn-danger:hover { background: #ffcdd2; }
+    .btn-sm { padding: 4px 10px; font-size: 11px; }
+    .add-btn { font-size: 12px; color: #1976d2; cursor: pointer; border: none; background: none; padding: 4px 0; margin-top: 8px; }
+    .add-btn:hover { text-decoration: underline; }
 
     .empty { font-size: 13px; color: #aaa; font-style: italic; padding: 8px 0; }
     .loading { text-align: center; padding: 40px; color: #aaa; }
+
+    @media (max-width: 600px) {
+      .info-row { flex-direction: column; gap: 2px; }
+      .info-label { min-width: 0; }
+      .info-notes { margin-left: 0; }
+      .tabs { overflow-x: auto; }
+      .tab { padding: 10px 14px; white-space: nowrap; }
+    }
   </style>
 </head>
 <body>
 
 <header>
   <h1>Brighter Days</h1>
-  <p>Corp Filing Dashboard — Valentina Park MD, PC</p>
+  <p>Valentina Park MD, Professional Corporation</p>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('filing')">Filing Checklist</button>
+  <button class="tab" onclick="switchTab('info')">Business Info</button>
+  <button class="tab" onclick="switchTab('structure')">Business Structure</button>
+</div>
+
+<!-- TAB 1: Filing Checklist + Docs -->
+<div class="tab-content active" id="tab-filing">
   <div class="progress-bar-container">
     <div class="progress-bar-fill" id="progressBar" style="width: 0%"></div>
   </div>
   <div class="progress-text" id="progressText">Loading...</div>
-</header>
 
-<div class="container">
-  <!-- Left: Checklist -->
-  <div class="panel">
-    <h2>Filing Checklist</h2>
-    <div id="checklist"><div class="loading">Loading...</div></div>
-    <button class="add-doc-btn" onclick="toggleAddForm()" id="addDocBtnChecklist" style="margin-top:12px;">+ Add Document</button>
+  <div class="two-col" style="margin-top:16px;">
+    <div class="panel">
+      <h2>Steps</h2>
+      <div id="checklist"><div class="loading">Loading...</div></div>
+      <button class="add-btn" onclick="showForm('stepForm')">+ Add Step</button>
+      <div class="inline-form" id="stepForm">
+        <label>Step Title</label>
+        <input type="text" id="stepTitle" placeholder="e.g., File Articles of Incorporation">
+        <label>Description (optional)</label>
+        <textarea id="stepDesc" placeholder="Details..."></textarea>
+        <div class="form-actions">
+          <button class="btn btn-primary" onclick="addStep()">Save</button>
+          <button class="btn btn-secondary" onclick="hideForm('stepForm')">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" id="docPanel">
+      <h2>Documents</h2>
+      <div id="docVault"></div>
+      <button class="add-btn" onclick="showForm('docForm')">+ Add Document</button>
+      <div class="inline-form" id="docForm">
+        <label>Linked Step</label>
+        <select id="docStep"></select>
+        <label>Document Name</label>
+        <input type="text" id="docName" placeholder="e.g., Articles of Incorporation PDF">
+        <label>Status</label>
+        <select id="docStatus">
+          <option value="needed">Needed</option>
+          <option value="uploaded">Uploaded</option>
+          <option value="filed">Filed</option>
+        </select>
+        <label>Link (optional)</label>
+        <input type="text" id="docUrl" placeholder="https://...">
+        <label>Notes (optional)</label>
+        <textarea id="docNotes" placeholder="Any details..."></textarea>
+        <div class="form-actions">
+          <button class="btn btn-primary" onclick="addDoc()">Save</button>
+          <button class="btn btn-secondary" onclick="hideForm('docForm')">Cancel</button>
+        </div>
+      </div>
+    </div>
   </div>
+</div>
 
-  <!-- Right: Document Vault -->
-  <div class="panel" id="docPanel" style="display:none;">
-    <h2>Document Vault</h2>
-    <div id="docVault"></div>
-
-    <button class="add-doc-btn" onclick="toggleAddForm()">+ Add Document</button>
-    <div class="add-doc-form" id="addDocForm">
-      <label>Linked Step</label>
-      <select id="docStep"></select>
-
-      <label>Document Name</label>
-      <input type="text" id="docName" placeholder="e.g., Articles of Incorporation PDF">
-
-      <label>Status</label>
-      <select id="docStatus">
-        <option value="needed">Needed</option>
-        <option value="uploaded">Uploaded</option>
-        <option value="filed">Filed</option>
-      </select>
-
-      <label>Link (optional)</label>
-      <input type="text" id="docUrl" placeholder="https://...">
-
+<!-- TAB 2: Business Info -->
+<div class="tab-content" id="tab-info">
+  <div class="panel">
+    <h2>Business Information</h2>
+    <div id="businessInfo"><div class="loading">Loading...</div></div>
+    <button class="add-btn" onclick="showForm('infoForm')">+ Add Field</button>
+    <div class="inline-form" id="infoForm">
+      <label>Category</label>
+      <input type="text" id="infoCategory" placeholder="e.g., Identifiers, Permits, Contact" list="infoCats">
+      <datalist id="infoCats"></datalist>
+      <label>Label</label>
+      <input type="text" id="infoLabel" placeholder="e.g., EIN">
+      <label>Value</label>
+      <input type="text" id="infoValue" placeholder="">
       <label>Notes (optional)</label>
-      <textarea id="docNotes" placeholder="Any details..."></textarea>
-
+      <input type="text" id="infoNotes" placeholder="">
       <div class="form-actions">
-        <button class="btn btn-primary" onclick="addDoc()">Save</button>
-        <button class="btn btn-secondary" onclick="toggleAddForm()">Cancel</button>
+        <button class="btn btn-primary" onclick="addInfo()">Save</button>
+        <button class="btn btn-secondary" onclick="hideForm('infoForm')">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 3: Business Structure -->
+<div class="tab-content" id="tab-structure">
+  <div class="panel">
+    <h2>Organization Structure</h2>
+    <div id="orgChart"><div class="loading">Loading...</div></div>
+    <button class="add-btn" onclick="showForm('roleForm')">+ Add Role</button>
+    <div class="inline-form" id="roleForm">
+      <label>Name</label>
+      <input type="text" id="roleName" placeholder="Full name">
+      <label>Title</label>
+      <input type="text" id="roleTitle" placeholder="e.g., Office Manager">
+      <label>Type</label>
+      <select id="roleType">
+        <option value="owner">Owner</option>
+        <option value="officer">Officer</option>
+        <option value="employee" selected>Employee</option>
+        <option value="contractor">Contractor</option>
+        <option value="advisor">Advisor</option>
+      </select>
+      <label>Reports To</label>
+      <select id="roleReportsTo"></select>
+      <label>Responsibilities</label>
+      <textarea id="roleResp" placeholder="Key responsibilities..."></textarea>
+      <div class="form-actions">
+        <button class="btn btn-primary" onclick="addRole()">Save</button>
+        <button class="btn btn-secondary" onclick="hideForm('roleForm')">Cancel</button>
       </div>
     </div>
   </div>
@@ -152,19 +256,34 @@
 <script>
   const SUPABASE_URL = 'https://ymejmufmaivocbwpadiy.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InltZWptdWZtYWl2b2Nid3BhZGl5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0ODA4NjUsImV4cCI6MjA5MDA1Njg2NX0.2ATuH-jQBy17jEHrt3k6q-Mjif7ZA0w74Q0WO-qfebc';
-
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  let steps = [];
-  let docs = [];
+  let steps = [], docs = [], infos = [], roles = [];
 
+  // --- Tab switching ---
+  function switchTab(name) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    document.querySelector(`[onclick="switchTab('${name}')"]`).classList.add('active');
+  }
+
+  // --- Form helpers ---
+  function showForm(id) { document.getElementById(id).classList.add('visible'); }
+  function hideForm(id) { document.getElementById(id).classList.remove('visible'); }
+
+  // --- Load all data ---
   async function loadData() {
-    const [stepsRes, docsRes] = await Promise.all([
+    const [stepsRes, docsRes, infosRes, rolesRes] = await Promise.all([
       sb.from('corp_filing_steps').select('*').order('step_number'),
-      sb.from('corp_filing_docs').select('*').order('created_at')
+      sb.from('corp_filing_docs').select('*').order('created_at'),
+      sb.from('business_info').select('*').order('sort_order'),
+      sb.from('business_roles').select('*').order('sort_order')
     ]);
     steps = stepsRes.data || [];
     docs = docsRes.data || [];
+    infos = infosRes.data || [];
+    roles = rolesRes.data || [];
     render();
   }
 
@@ -173,8 +292,13 @@
     renderDocs();
     renderProgress();
     renderStepDropdown();
+    renderBusinessInfo();
+    renderOrgChart();
+    renderReportsToDropdown();
+    renderCategoryDatalist();
   }
 
+  // --- Filing Checklist ---
   function renderProgress() {
     const done = steps.filter(s => s.is_complete).length;
     const pct = steps.length ? Math.round((done / steps.length) * 100) : 0;
@@ -184,27 +308,61 @@
 
   function renderChecklist() {
     const el = document.getElementById('checklist');
-    if (!steps.length) { el.innerHTML = '<div class="empty">No steps found.</div>'; return; }
+    if (!steps.length) { el.innerHTML = '<div class="empty">No steps yet.</div>'; return; }
     el.innerHTML = steps.map(s => `
       <div class="step">
-        <span class="step-number">${s.step_number}.</span>
         <input type="checkbox" ${s.is_complete ? 'checked' : ''} onchange="toggleStep(${s.id}, this.checked)">
         <div class="step-content">
           <div class="step-title ${s.is_complete ? 'done' : ''}">${esc(s.title)}</div>
           <div class="step-desc">${esc(s.description || '')}</div>
         </div>
+        <div class="step-actions">
+          <button class="icon-btn" onclick="editStep(${s.id})" title="Edit">&#9998;</button>
+          <button class="icon-btn delete" onclick="deleteStep(${s.id})" title="Delete">&times;</button>
+        </div>
       </div>
     `).join('');
   }
 
-  function renderDocs() {
-    const panel = document.getElementById('docPanel');
-    const el = document.getElementById('docVault');
-    const addBtnChecklist = document.getElementById('addDocBtnChecklist');
-    if (!docs.length) { panel.style.display = 'none'; addBtnChecklist.style.display = 'block'; return; }
-    panel.style.display = 'block';
-    addBtnChecklist.style.display = 'none';
+  async function toggleStep(id, checked) {
+    await sb.from('corp_filing_steps').update({ is_complete: checked, completed_at: checked ? new Date().toISOString() : null }).eq('id', id);
+    await loadData();
+  }
 
+  async function addStep() {
+    const title = document.getElementById('stepTitle').value.trim();
+    if (!title) { alert('Title required.'); return; }
+    const maxNum = steps.length ? Math.max(...steps.map(s => s.step_number)) : 0;
+    await sb.from('corp_filing_steps').insert({
+      step_number: maxNum + 1,
+      title,
+      description: document.getElementById('stepDesc').value.trim() || null
+    });
+    document.getElementById('stepTitle').value = '';
+    document.getElementById('stepDesc').value = '';
+    hideForm('stepForm');
+    await loadData();
+  }
+
+  async function editStep(id) {
+    const s = steps.find(x => x.id === id);
+    const title = prompt('Step title:', s.title);
+    if (title === null) return;
+    const desc = prompt('Description:', s.description || '');
+    await sb.from('corp_filing_steps').update({ title: title || s.title, description: desc || null }).eq('id', id);
+    await loadData();
+  }
+
+  async function deleteStep(id) {
+    if (!confirm('Delete this step?')) return;
+    await sb.from('corp_filing_steps').delete().eq('id', id);
+    await loadData();
+  }
+
+  // --- Documents ---
+  function renderDocs() {
+    const el = document.getElementById('docVault');
+    if (!docs.length) { el.innerHTML = '<div class="empty">No documents yet.</div>'; return; }
     const grouped = {};
     docs.forEach(d => {
       const step = steps.find(s => s.id === d.step_id);
@@ -212,7 +370,6 @@
       if (!grouped[key]) grouped[key] = [];
       grouped[key].push(d);
     });
-
     el.innerHTML = Object.entries(grouped).map(([group, items]) => `
       <div class="doc-group">
         <div class="doc-group-title">${esc(group)}</div>
@@ -224,9 +381,9 @@
               <option value="uploaded" ${d.status === 'uploaded' ? 'selected' : ''}>uploaded</option>
               <option value="filed" ${d.status === 'filed' ? 'selected' : ''}>filed</option>
             </select>
-            <button class="doc-delete" onclick="deleteDoc(${d.id})" title="Delete">×</button>
+            <button class="icon-btn delete" onclick="deleteDoc(${d.id})" title="Delete">&times;</button>
           </div>
-          ${d.notes ? '<div class="doc-notes" style="margin-left:8px;margin-bottom:4px;">' + esc(d.notes) + '</div>' : ''}
+          ${d.notes ? '<div style="font-size:11px;color:#999;margin-left:4px;margin-bottom:4px;">' + esc(d.notes) + '</div>' : ''}
         `).join('')}
       </div>
     `).join('');
@@ -238,11 +395,21 @@
       steps.map(s => `<option value="${s.id}">${s.step_number}. ${esc(s.title)}</option>`).join('');
   }
 
-  async function toggleStep(id, checked) {
-    await sb.from('corp_filing_steps').update({
-      is_complete: checked,
-      completed_at: checked ? new Date().toISOString() : null
-    }).eq('id', id);
+  async function addDoc() {
+    const name = document.getElementById('docName').value.trim();
+    if (!name) { alert('Name required.'); return; }
+    const stepId = document.getElementById('docStep').value;
+    await sb.from('corp_filing_docs').insert({
+      step_id: stepId ? parseInt(stepId) : null,
+      name,
+      status: document.getElementById('docStatus').value,
+      url: document.getElementById('docUrl').value.trim() || null,
+      notes: document.getElementById('docNotes').value.trim() || null
+    });
+    document.getElementById('docName').value = '';
+    document.getElementById('docUrl').value = '';
+    document.getElementById('docNotes').value = '';
+    hideForm('docForm');
     await loadData();
   }
 
@@ -257,35 +424,131 @@
     await loadData();
   }
 
-  function toggleAddForm() {
-    document.getElementById('addDocForm').classList.toggle('visible');
+  // --- Business Info ---
+  function renderBusinessInfo() {
+    const el = document.getElementById('businessInfo');
+    if (!infos.length) { el.innerHTML = '<div class="empty">No business info yet.</div>'; return; }
+    const cats = {};
+    infos.forEach(i => { if (!cats[i.category]) cats[i.category] = []; cats[i.category].push(i); });
+    el.innerHTML = Object.entries(cats).map(([cat, items]) => `
+      <div class="info-category">${esc(cat)}</div>
+      ${items.map(i => `
+        <div class="info-row">
+          <span class="info-label">${esc(i.label)}</span>
+          <span class="info-value">
+            <input type="text" value="${esc(i.value || '')}" placeholder="—"
+              onchange="updateInfo(${i.id}, this.value)"
+              data-id="${i.id}">
+          </span>
+          <button class="icon-btn delete" onclick="deleteInfo(${i.id})" title="Delete">&times;</button>
+        </div>
+        ${i.notes ? '<div class="info-notes">' + esc(i.notes) + '</div>' : ''}
+      `).join('')}
+    `).join('');
   }
 
-  async function addDoc() {
-    const name = document.getElementById('docName').value.trim();
-    if (!name) { alert('Document name is required.'); return; }
+  function renderCategoryDatalist() {
+    const cats = [...new Set(infos.map(i => i.category))];
+    document.getElementById('infoCats').innerHTML = cats.map(c => `<option value="${esc(c)}">`).join('');
+  }
 
-    const stepId = document.getElementById('docStep').value;
-    await sb.from('corp_filing_docs').insert({
-      step_id: stepId ? parseInt(stepId) : null,
-      name: name,
-      status: document.getElementById('docStatus').value,
-      url: document.getElementById('docUrl').value.trim() || null,
-      notes: document.getElementById('docNotes').value.trim() || null
+  async function updateInfo(id, value) {
+    await sb.from('business_info').update({ value, updated_at: new Date().toISOString() }).eq('id', id);
+  }
+
+  async function addInfo() {
+    const label = document.getElementById('infoLabel').value.trim();
+    const category = document.getElementById('infoCategory').value.trim();
+    if (!label || !category) { alert('Category and label required.'); return; }
+    const maxOrder = infos.length ? Math.max(...infos.map(i => i.sort_order)) : 0;
+    await sb.from('business_info').insert({
+      category,
+      label,
+      value: document.getElementById('infoValue').value.trim() || null,
+      notes: document.getElementById('infoNotes').value.trim() || null,
+      sort_order: maxOrder + 1
     });
-
-    document.getElementById('docName').value = '';
-    document.getElementById('docUrl').value = '';
-    document.getElementById('docNotes').value = '';
-    document.getElementById('addDocForm').classList.remove('visible');
+    document.getElementById('infoCategory').value = '';
+    document.getElementById('infoLabel').value = '';
+    document.getElementById('infoValue').value = '';
+    document.getElementById('infoNotes').value = '';
+    hideForm('infoForm');
     await loadData();
   }
 
-  function esc(str) {
-    const d = document.createElement('div');
-    d.textContent = str;
-    return d.innerHTML;
+  async function deleteInfo(id) {
+    if (!confirm('Delete this field?')) return;
+    await sb.from('business_info').delete().eq('id', id);
+    await loadData();
   }
+
+  // --- Org Chart ---
+  function renderOrgChart() {
+    const el = document.getElementById('orgChart');
+    if (!roles.length) { el.innerHTML = '<div class="empty">No roles defined.</div>'; return; }
+    const topLevel = roles.filter(r => !r.reports_to);
+    const getChildren = (parentId) => roles.filter(r => r.reports_to === parentId);
+
+    function renderCard(r, depth) {
+      const children = getChildren(r.id);
+      const respLines = r.responsibilities ? r.responsibilities.split(',').map(s => s.trim()).filter(Boolean) : [];
+      return `
+        ${depth > 0 ? '<div class="org-connector"></div><div class="org-connector-label">reports to</div>' : ''}
+        <div class="org-card ${r.role_type === 'owner' ? 'owner' : ''}" style="margin-left:${depth * 40}px;">
+          <button class="icon-btn" onclick="editRole(${r.id})" title="Edit">&#9998;</button>
+          <div class="org-card-name">${esc(r.name)}</div>
+          <div class="org-card-title">${esc(r.title)}</div>
+          <span class="org-card-type">${esc(r.role_type)}</span>
+          ${respLines.length ? '<div class="org-card-resp">' + respLines.map(l => '• ' + esc(l)).join('<br>') + '</div>' : ''}
+        </div>
+        ${children.map(c => renderCard(c, depth + 1)).join('')}
+      `;
+    }
+
+    el.innerHTML = '<div class="org-chart">' + topLevel.map(r => renderCard(r, 0)).join('') + '</div>';
+  }
+
+  function renderReportsToDropdown() {
+    const el = document.getElementById('roleReportsTo');
+    el.innerHTML = '<option value="">— None (top level) —</option>' +
+      roles.map(r => `<option value="${r.id}">${esc(r.name)} — ${esc(r.title)}</option>`).join('');
+  }
+
+  async function addRole() {
+    const name = document.getElementById('roleName').value.trim();
+    const title = document.getElementById('roleTitle').value.trim();
+    if (!name || !title) { alert('Name and title required.'); return; }
+    const reportsTo = document.getElementById('roleReportsTo').value;
+    const maxOrder = roles.length ? Math.max(...roles.map(r => r.sort_order)) : 0;
+    await sb.from('business_roles').insert({
+      name, title,
+      role_type: document.getElementById('roleType').value,
+      reports_to: reportsTo ? parseInt(reportsTo) : null,
+      responsibilities: document.getElementById('roleResp').value.trim() || null,
+      sort_order: maxOrder + 1
+    });
+    document.getElementById('roleName').value = '';
+    document.getElementById('roleTitle').value = '';
+    document.getElementById('roleResp').value = '';
+    hideForm('roleForm');
+    await loadData();
+  }
+
+  async function editRole(id) {
+    const r = roles.find(x => x.id === id);
+    const name = prompt('Name:', r.name);
+    if (name === null) return;
+    const title = prompt('Title:', r.title);
+    const resp = prompt('Responsibilities (comma-separated):', r.responsibilities || '');
+    await sb.from('business_roles').update({
+      name: name || r.name,
+      title: title || r.title,
+      responsibilities: resp || null
+    }).eq('id', id);
+    await loadData();
+  }
+
+  function esc(str) { const d = document.createElement('div'); d.textContent = str; return d.innerHTML; }
 
   loadData();
 </script>
