@@ -636,7 +636,7 @@
       const statusClass = row.status === 'Replied' ? 'filed' : 'needed';
       const rowBg = row.status === 'Replied' ? 'background:#e8f5e9;' : 'background:#fff3e0;';
       const replyRow = row.reply_snippet
-        ? `<tr style="${rowBg}"><td></td><td colspan="4" style="padding:4px 8px 12px;"><div style="font-size:12px;color:#555;background:rgba(255,255,255,0.7);border-radius:6px;padding:8px 12px;margin-top:-4px;"><strong style="color:#333;">Reply${row.reply_date ? ' (' + new Date(row.reply_date).toLocaleDateString() + ')' : ''}:</strong> ${esc(row.reply_snippet)}</div></td><td></td></tr>`
+        ? `<tr style="${rowBg}"><td></td><td colspan="4" style="padding:4px 8px 12px;"><div style="font-size:12px;color:#555;background:rgba(255,255,255,0.7);border-radius:6px;padding:8px 12px;margin-top:-4px;"><strong style="color:#333;">${row.reply_from ? esc(row.reply_from) : 'Reply'}${row.reply_date ? ' — ' + new Date(row.reply_date).toLocaleDateString() + '' : ''}:</strong> ${esc(row.reply_snippet)}</div></td><td></td></tr>`
         : '';
       return `<tr style="border-bottom:${row.reply_snippet ? 'none' : '1px solid #f0f0f0'};${rowBg}">
         <td style="padding:8px 12px;color:#999;">${i + 1}</td>
