@@ -160,6 +160,7 @@
   <button class="tab" onclick="switchTab('followup')">Communications</button>
   <button class="tab" onclick="switchTab('info')">Business Info</button>
   <button class="tab" onclick="switchTab('structure')">Business Structure</button>
+  <button class="tab" onclick="switchTab('strategy')">Strategy</button>
 </div>
 
 <!-- TAB 1: Filing Checklist + Docs -->
@@ -288,6 +289,69 @@
       <tbody id="vendorBody"></tbody>
     </table>
     <button class="add-btn" onclick="addVendor()">+ Add Vendor</button>
+  </div>
+</div>
+
+<!-- TAB 5: Strategy -->
+<div class="tab-content" id="tab-strategy">
+  <div class="panel">
+    <h2>Vendor Strategy</h2>
+    <p style="font-size:13px;color:#666;margin-bottom:20px;">Phased approach — based on multi-agent research (March 2026)</p>
+
+    <div style="display:grid;grid-template-columns:1fr;gap:16px;">
+
+      <div style="background:#e3f2fd;border-radius:10px;padding:16px;border-left:4px solid #1976d2;">
+        <div style="font-weight:600;color:#1976d2;margin-bottom:4px;">Phase 1 — Months 0-6: Get Revenue Flowing</div>
+        <div style="font-size:13px;color:#333;">
+          <strong>What:</strong> Hire ONE psychiatry-specific billing company that bundles credentialing + billing.<br>
+          <strong>Why:</strong> Credentialing takes 90-120 days. Every week of delay = a week without patients. Two-person team can't manage multiple vendors.<br>
+          <strong>Candidates:</strong> DENmaar, AnnexMed, TheraThink, PsyWell<br>
+          <strong>Cost:</strong> 5-8% of collections<br>
+          <strong>Key questions to ask:</strong> Psychiatry client count, CA Medi-Cal experience, rate card, contract terms, data portability
+        </div>
+      </div>
+
+      <div style="background:#f3e5f5;border-radius:10px;padding:16px;border-left:4px solid #7b1fa2;">
+        <div style="font-weight:600;color:#7b1fa2;margin-bottom:4px;">Phase 2 — Months 3-6: Build Intelligence (Free)</div>
+        <div style="font-size:13px;color:#333;">
+          <strong>What:</strong> Claude analyzes payer rate data and benchmarks Valentina's rates against market.<br>
+          <strong>Why:</strong> 82% of practices never compile this data. Having it gives you negotiation leverage.<br>
+          <strong>Deliverables:</strong> Rate benchmarking report, payer gap analysis, draft rate increase letters<br>
+          <strong>Cost:</strong> $0
+        </div>
+      </div>
+
+      <div style="background:#e8f5e9;border-radius:10px;padding:16px;border-left:4px solid #388e3c;">
+        <div style="font-weight:600;color:#388e3c;margin-bottom:4px;">Phase 3 — Month 7+: Negotiate Higher Rates</div>
+        <div style="font-size:13px;color:#333;">
+          <strong>What:</strong> Hire a dedicated contract negotiation specialist (Aroris Health, PayrHealth, or NGA Healthcare).<br>
+          <strong>Why:</strong> Specialist negotiators achieve 15.5% rate increases vs. billing companies' 2-4%. On $500K revenue that's $60-77K/year more income.<br>
+          <strong>Timing:</strong> Need 6 months of claims data first — can't negotiate without volume/denial metrics.<br>
+          <strong>Cost:</strong> $8-12K project fee or performance-based
+        </div>
+      </div>
+
+    </div>
+
+    <div style="margin-top:20px;background:#fff8e1;border-radius:10px;padding:16px;border-left:4px solid #f57f17;">
+      <div style="font-weight:600;color:#f57f17;margin-bottom:4px;">Key Decision: MSO Not Needed (Yet)</div>
+      <div style="font-size:13px;color:#333;">
+        If Valentina owns 100% of the Professional Corporation, no MSO is required. MSOs exist for non-physician ownership. CA SB 351/AB 1415 (Jan 2026) increased MSO regulatory burden. Revisit only if bringing in outside investors or non-physician owners.
+      </div>
+    </div>
+
+    <div style="margin-top:20px;background:#fce4ec;border-radius:10px;padding:16px;border-left:4px solid #c62828;">
+      <div style="font-weight:600;color:#c62828;margin-bottom:4px;">What We Need From a Vendor</div>
+      <div style="font-size:13px;color:#333;">
+        <table style="width:100%;font-size:12px;border-collapse:collapse;margin-top:8px;">
+          <tr style="border-bottom:1px solid #f0c0c0;"><td style="padding:4px 0;font-weight:500;">Knows psychiatry billing</td><td style="color:#888;">CPT 90791-90899, telehealth modifiers, E/M add-ons</td></tr>
+          <tr style="border-bottom:1px solid #f0c0c0;"><td style="padding:4px 0;font-weight:500;">Knows California</td><td style="color:#888;">Medi-Cal carve-outs, county MHP structure, CalAIM</td></tr>
+          <tr style="border-bottom:1px solid #f0c0c0;"><td style="padding:4px 0;font-weight:500;">Transparent pricing</td><td style="color:#888;">Flat fee or clear %, no hidden charges</td></tr>
+          <tr style="border-bottom:1px solid #f0c0c0;"><td style="padding:4px 0;font-weight:500;">Easy exit</td><td style="color:#888;">30-60 day termination, full data export</td></tr>
+          <tr><td style="padding:4px 0;font-weight:500;">References</td><td style="color:#888;">Named psychiatry clients we can call</td></tr>
+        </table>
+      </div>
+    </div>
   </div>
 </div>
 
